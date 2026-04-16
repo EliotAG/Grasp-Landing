@@ -498,51 +498,31 @@ export default function App() {
       {/* ─── Comparison table ─── */}
       <section className="section-padding" style={{ maxWidth: 860, margin: "0 auto", padding: "60px 48px 80px" }}>
         <Reveal>
-          {/* Desktop table */}
-          <div className="comparison-desktop" style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)", overflow: "hidden" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: "20px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.08em", width: "28%" }} />
-                  <th style={{ padding: "20px 12px", textAlign: "center", fontSize: 12, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", width: "24%" }}>Do nothing</th>
-                  <th style={{ padding: "20px 12px", textAlign: "center", fontSize: 12, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", width: "24%" }}>Internal PM</th>
-                  <th style={{ padding: "20px 12px", textAlign: "center", fontSize: 12, fontWeight: 700, color: COLORS.green, textTransform: "uppercase", letterSpacing: "0.06em", width: "24%", background: "rgba(46,125,50,0.04)" }}>Grasp</th>
-                </tr>
-              </thead>
-              <tbody>
-                {COMPARISON_ROWS.map((r, i) => (
-                  <tr key={i} style={{ borderTop: "1px solid rgba(0,0,0,0.04)" }}>
-                    <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 600, color: "#555", whiteSpace: "nowrap" }}>{r.row}</td>
-                    <td style={{ padding: "14px 12px", textAlign: "center", fontSize: 13, color: "#bbb" }}>{r.c1}</td>
-                    <td style={{ padding: "14px 12px", textAlign: "center", fontSize: 13, color: "#999" }}>{r.c2}</td>
-                    <td style={{ padding: "14px 12px", textAlign: "center", fontSize: 13, color: COLORS.green, fontWeight: 600, background: "rgba(46,125,50,0.04)" }}>{r.c3}</td>
+          <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)", overflow: "hidden", position: "relative" }}>
+            <div className="comparison-scroll" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 580 }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: "20px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.08em", width: "28%", position: "sticky", left: 0, background: "rgba(250,249,246,0.95)", zIndex: 1 }} />
+                    <th style={{ padding: "20px 12px", textAlign: "center", fontSize: 12, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", width: "24%" }}>Do nothing</th>
+                    <th style={{ padding: "20px 12px", textAlign: "center", fontSize: 12, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", width: "24%" }}>Internal PM</th>
+                    <th style={{ padding: "20px 12px", textAlign: "center", fontSize: 12, fontWeight: 700, color: COLORS.green, textTransform: "uppercase", letterSpacing: "0.06em", width: "24%", background: "rgba(46,125,50,0.04)" }}>Grasp</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile cards */}
-          <div className="comparison-mobile" style={{ display: "none", flexDirection: "column", gap: 12 }}>
-            {COMPARISON_ROWS.map((r, i) => (
-              <div key={i} style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", borderRadius: 14, border: "1px solid rgba(0,0,0,0.05)", padding: "18px 20px" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#444", marginBottom: 10 }}>{r.row}</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                    <span style={{ color: "#bbb" }}>Do nothing</span>
-                    <span style={{ color: "#bbb" }}>{r.c1}</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                    <span style={{ color: "#999" }}>Internal PM</span>
-                    <span style={{ color: "#999" }}>{r.c2}</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, background: "rgba(46,125,50,0.04)", margin: "0 -8px", padding: "6px 8px", borderRadius: 6 }}>
-                    <span style={{ color: COLORS.green, fontWeight: 600 }}>Grasp</span>
-                    <span style={{ color: COLORS.green, fontWeight: 600 }}>{r.c3}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+                </thead>
+                <tbody>
+                  {COMPARISON_ROWS.map((r, i) => (
+                    <tr key={i} style={{ borderTop: "1px solid rgba(0,0,0,0.04)" }}>
+                      <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 600, color: "#555", whiteSpace: "nowrap", position: "sticky", left: 0, background: "rgba(250,249,246,0.95)", zIndex: 1 }}>{r.row}</td>
+                      <td style={{ padding: "14px 12px", textAlign: "center", fontSize: 13, color: "#bbb" }}>{r.c1}</td>
+                      <td style={{ padding: "14px 12px", textAlign: "center", fontSize: 13, color: "#999" }}>{r.c2}</td>
+                      <td style={{ padding: "14px 12px", textAlign: "center", fontSize: 13, color: COLORS.green, fontWeight: 600, background: "rgba(46,125,50,0.04)" }}>{r.c3}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Fade hint on right edge for mobile */}
+            <div className="scroll-fade" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 32, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.8))", pointerEvents: "none", borderRadius: "0 20px 20px 0", display: "none" }} />
           </div>
         </Reveal>
       </section>
@@ -623,10 +603,10 @@ export default function App() {
         </div>
 
         <Reveal delay={0.3}>
-          <p style={{ fontSize: 13, color: "#bbb", textAlign: "center", marginTop: 32, fontStyle: "italic", fontFamily: FONT.serif, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            Former roommates at
-            <img src="/penn-shield.svg" alt="University of Pennsylvania" style={{ height: 18, width: "auto", display: "inline-block", flexShrink: 0 }} />
-            Penn, the next team in your corner.
+          <p style={{ fontSize: 13, color: "#bbb", textAlign: "center", marginTop: 32, fontStyle: "italic", fontFamily: FONT.serif }}>
+            Former roommates at{" "}
+            <img src="/penn-shield.svg" alt="University of Pennsylvania" style={{ height: 16, width: "auto", display: "inline", verticalAlign: "-2px" }} />
+            {" "}Penn, the next team in your corner.
           </p>
         </Reveal>
       </section>

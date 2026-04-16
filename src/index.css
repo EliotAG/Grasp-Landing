@@ -58,11 +58,8 @@ img {
     flex-direction: column;
     align-items: center;
   }
-  .comparison-desktop {
-    display: none !important;
-  }
-  .comparison-mobile {
-    display: flex !important;
+  .scroll-fade {
+    display: block !important;
   }
   .scenario-grid {
     grid-template-columns: 1fr !important;
