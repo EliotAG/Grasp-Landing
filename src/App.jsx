@@ -145,17 +145,17 @@ const COLORS = {
 };
 
 const STEPS = [
-  { step: "01", title: "Describe the rollout", desc: "What tool, how many people, which departments, when you go live. Connect your email and Slack.", sub: "Takes 5 minutes. Grasp asks the questions a change management consultant would — then uses your answers to shape every communication.", color: "#4A7C59" },
-  { step: "02", title: "Review and approve", desc: "Grasp generates the full campaign — every email, Slack message, manager briefing, and survey. You review, edit, approve.", sub: "This is the only step that requires your time. Average review: 20 minutes. Then you're done.", color: "#5B7B9D" },
-  { step: "03", title: "Grasp runs it", desc: "The campaign executes autonomously. Emails send on schedule. Slack messages post. Manager kits deliver. Follow-ups trigger.", sub: "Connects to Outlook, Gmail, Slack, or Teams. Sends as you or as a dedicated channel. Every message timed, targeted, tracked.", color: "#8B6E4E" },
-  { step: "04", title: "Grasp adapts", desc: "Monitors engagement across every channel. Teams that aren't responding get different messaging, different timing, different approach.", sub: "If engineering opens everything but sales ignores it all, Grasp shifts strategy for sales automatically. You get a weekly readiness briefing.", color: "#7B6B8D" },
+  { step: "01", title: "Grasp learns", desc: "Upload your docs, notes, and project details. Grasp learns the what, who, when, and why of your rollout.", sub: "Project briefs, migration docs, training guides, timelines. Grasp ingests it all and builds the full communication campaign.", color: "#4A7C59" },
+  { step: "02", title: "You review, change, and approve", desc: "Grasp generates every message, briefing, and follow-up. You review it, make changes, and approve.", sub: "This is the only step that requires your time. Then you're done.", color: "#5B7B9D" },
+  { step: "03", title: "Grasp runs it", desc: "The campaign executes autonomously across Teams, Slack, Zoom, and email. When teams aren't engaging, Grasp adapts the messaging, timing, and approach.", sub: "Every message timed, targeted, and tracked. If something isn't landing, Grasp shifts strategy automatically.", color: "#8B6E4E" },
+  { step: "04", title: "Your rollout lands", desc: "People actually adopt the tool. No more ignored emails, confused teams, or rollouts that silently fail.", sub: "Full visibility into adoption by team, department, and individual. You hit your go-live date with everyone on board.", color: "#7B6B8D" },
 ];
 
 const FEATURES = [
-  { icon: "email", title: "Email sequences", desc: "Department-specific drip campaigns that build understanding over weeks — not a single blast.", color: "#4A7C59" },
-  { icon: "chat", title: "Slack & Teams", desc: "Channel posts, DMs to key stakeholders, threaded Q&A — posted at exactly the right moment.", color: "#5B7B9D" },
+  { icon: "email", title: "Email sequences", desc: "Department-specific drip campaigns that build understanding over weeks, not a single blast.", color: "#4A7C59" },
+  { icon: "chat", title: "Slack & Teams", desc: "Channel posts, DMs to key stakeholders, threaded Q&A, posted at exactly the right moment.", color: "#5B7B9D" },
   { icon: "clipboard", title: "Manager briefing kits", desc: "Talking points and FAQ docs delivered to every manager before their team hears a word.", color: "#8B6E4E" },
-  { icon: "refresh", title: "Adaptive follow-ups", desc: "People who haven't engaged get different messaging — different angle, different channel, different time.", color: "#7B6B8D" },
+  { icon: "refresh", title: "Adaptive follow-ups", desc: "People who haven't engaged get different messaging. Different angle, different channel, different time.", color: "#7B6B8D" },
   { icon: "chart", title: "Sentiment tracking", desc: "Automated pulse surveys. Real-time dashboard showing buy-in by department, team, and role.", color: "#4A7C59" },
   { icon: "target", title: "Resistance response", desc: "Detects pushback and responds with tailored messaging for each person's specific concern.", color: "#5B7B9D" },
 ];
@@ -170,21 +170,20 @@ const WITHOUT = [
 ];
 
 const WITH = [
-  "Targeted emails to each department — why this matters to them",
   "Managers get talking points before anyone asks questions",
-  "Employees hear from their direct manager first",
+  "Targeted communications to each team member: they understand why it's important",
   "Skeptics get personalized follow-ups for their objections",
-  "Engagement tracked in real-time — you see who's bought in",
   "By go-live, the groundwork has been running for weeks",
 ];
 
 const COMPARISON_ROWS = [
-  { row: "Cost", c1: "$0 up front, $$$$ in waste", c2: "$50K – $200K", c3: "$500/mo" },
-  { row: "Time to first message", c1: "—", c2: "4–10 weeks", c3: "Same day" },
-  { row: "Personalized by dept.", c1: "No", c2: "Sometimes", c3: "Always" },
-  { row: "Adapts to engagement", c1: "No", c2: "Manually", c3: "Automatically" },
-  { row: "Runs autonomously", c1: "—", c2: "No", c3: "Yes" },
-  { row: "Multi-channel", c1: "—", c2: "Email only", c3: "All channels" },
+  { row: "Cost", c1: "$0 up front", c2: "$110K–$170K/yr salary", c3: "$500/mo" },
+  { row: "Time to first message", c1: "Day of go-live", c2: "2–6 weeks", c3: "Same day" },
+  { row: "Personalized by dept.", c1: "No", c2: "If they have bandwidth", c3: "Always" },
+  { row: "Adapts to engagement", c1: "No", c2: "Manually, if tracked", c3: "Automatically" },
+  { row: "Scales across rollouts", c1: "No", c2: "One at a time", c3: "Unlimited" },
+  { row: "Multi-channel", c1: "One email blast", c2: "Email + maybe Slack", c3: "All channels" },
+  { row: "Available at smaller cos.", c1: "Default", c2: "Rarely hired", c3: "Yes" },
 ];
 
 const SCENARIOS = [
@@ -196,23 +195,23 @@ const SCENARIOS = [
 const TEAM = [
   {
     name: "Akash Jain",
-    role: "Co-Founder & CEO",
+    role: "CEO",
     photo: "/Akash.jpeg",
-    bio: "Penn M&T (Wharton + Engineering). Strategy consultant for 3+ years in life sciences. Background in marketing, operations management, and chemical engineering.",
+    bio: "Former Strategy Consultant, Non-Profit Founder, Engineer. M&T.",
     linkedin: "https://www.linkedin.com/in/akash120/",
   },
   {
     name: "Eliot Herbst",
-    role: "Co-Founder & CTO",
+    role: "CTO",
     photo: "/Eliot.jpeg",
-    bio: "Software Engineering at Amazon, a16z-backed Halliday, and former CTO of a $50M IT VAR. Built software for Zoom, Microsoft.",
+    bio: "Former CIO & CTO. Software Engineer at Amazon, a16z-backed Halliday.",
     linkedin: "https://www.linkedin.com/in/eliot-herbst-016b77164/",
   },
   {
     name: "Arik Li",
-    role: "Co-Founder",
+    role: "CGO",
     photo: "/Arik.jpg",
-    bio: "Wharton (Entrepreneurship & Innovation). Healthcare investment banking at BofA. Growth investing at H.I.G. Capital.",
+    bio: "Former Investment Banker & Growth Equity Investor. Product & Business at AI startup.",
     linkedin: "https://www.linkedin.com/in/ricky-w-li/",
   },
 ];
@@ -242,11 +241,26 @@ function Divider() {
   );
 }
 
+const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxA8pzIkz-5Nhq2O0jg6vdeSaZBJj2J1YhpZolYU1_1uyMyao8re7d1zGMAYbT2osFp1A/exec";
+
 /* ── Main App ── */
 export default function App() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [hoveredStep, setHoveredStep] = useState(null);
+
+  const handleWaitlist = () => {
+    if (!email || submitting) return;
+    setSubmitting(true);
+    fetch(GOOGLE_SHEET_URL, {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    })
+      .then(() => setSubmitted(true))
+      .catch(() => setSubmitted(true))
+      .finally(() => setSubmitting(false));
+  };
 
   const scrollToCta = () => document.getElementById("cta")?.scrollIntoView({ behavior: "smooth" });
 
@@ -257,13 +271,32 @@ export default function App() {
         rel="stylesheet"
       />
 
-      {/* Noise texture */}
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 9999, opacity: 0.025, backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`, backgroundRepeat: "repeat", backgroundSize: "256px 256px" }} />
+      {/* ── Background layers ── */}
+      {/* Base gradient */}
+      <div style={{ position: "fixed", inset: 0, background: "linear-gradient(175deg, #FAFAF7 0%, #F4F3EF 40%, #EFEEE8 100%)", zIndex: -3 }} />
 
-      {/* Background */}
-      <div style={{ position: "fixed", inset: 0, background: "linear-gradient(175deg, #FAFAF7 0%, #F4F3EF 40%, #EFEEE8 100%)", zIndex: -2 }} />
-      <div style={{ position: "fixed", top: "-30%", right: "-15%", width: "70vw", height: "70vw", borderRadius: "50%", background: "radial-gradient(circle, rgba(200,210,190,0.15) 0%, transparent 70%)", zIndex: -1 }} />
-      <div style={{ position: "fixed", bottom: "-20%", left: "-10%", width: "50vw", height: "50vw", borderRadius: "50%", background: "radial-gradient(circle, rgba(190,195,210,0.1) 0%, transparent 70%)", zIndex: -1 }} />
+      {/* Diagonal hatching */}
+      <div style={{
+        position: "fixed", inset: 0, zIndex: -2, pointerEvents: "none",
+        backgroundImage: `repeating-linear-gradient(
+          -45deg,
+          transparent,
+          transparent 18px,
+          rgba(0,0,0,0.035) 18px,
+          rgba(0,0,0,0.035) 19px
+        )`,
+        WebkitMaskImage: "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 25%, black 70%)",
+        maskImage: "radial-gradient(ellipse 80% 70% at 50% 40%, transparent 25%, black 70%)",
+      }} />
+
+      {/* Slow-drifting glow orbs */}
+      <div className="glow-orb-1" style={{ position: "fixed", top: "-20%", right: "-10%", width: "55vw", height: "55vw", borderRadius: "50%", background: "radial-gradient(circle, rgba(170,200,140,0.2) 0%, transparent 60%)", zIndex: -1, pointerEvents: "none", filter: "blur(60px)" }} />
+      <div className="glow-orb-2" style={{ position: "fixed", bottom: "-15%", left: "-8%", width: "45vw", height: "45vw", borderRadius: "50%", background: "radial-gradient(circle, rgba(160,175,215,0.18) 0%, transparent 60%)", zIndex: -1, pointerEvents: "none", filter: "blur(60px)" }} />
+      <div className="glow-orb-3" style={{ position: "fixed", top: "30%", left: "20%", width: "35vw", height: "35vw", borderRadius: "50%", background: "radial-gradient(circle, rgba(210,185,140,0.14) 0%, transparent 55%)", zIndex: -1, pointerEvents: "none", filter: "blur(80px)" }} />
+
+
+      {/* Grain/noise overlay */}
+      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 9999, opacity: 0.04, mixBlendMode: "multiply", backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`, backgroundRepeat: "repeat", backgroundSize: "256px 256px" }} />
 
       {/* ─── Nav ─── */}
       <nav className="nav-padding" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "22px 48px", maxWidth: 1200, margin: "0 auto" }}>
@@ -326,7 +359,7 @@ export default function App() {
               Join the waitlist
             </button>
             <button
-              onClick={() => window.open("https://calendly.com/akashjain-grasp/30min", "_blank")}
+              onClick={() => window.open("https://calendar.app.google/nYd9AsDNHrXup8Lk9", "_blank")}
               style={{ background: "rgba(255,255,255,0.6)", color: "#333", border: "1px solid rgba(0,0,0,0.1)", padding: "15px 36px", borderRadius: 100, fontSize: 15, fontWeight: 500, cursor: "pointer", fontFamily: FONT.sans, backdropFilter: "blur(8px)", transition: "all 0.2s ease" }}
             >
               Book a call
@@ -340,16 +373,16 @@ export default function App() {
       {/* ─── Before / After ─── */}
       <section className="section-padding" style={{ maxWidth: 960, margin: "0 auto", padding: "80px 48px" }}>
         <Reveal>
-          <SectionLabel>The pattern you already know</SectionLabel>
-          <SectionHeading>
-            Every rollout fails the <span style={{ fontStyle: "italic" }}>same</span> way.
-          </SectionHeading>
+          <SectionLabel>Change management matters</SectionLabel>
+          <h2 style={{ fontFamily: FONT.serif, fontSize: "clamp(28px, 3.5vw, 40px)", fontWeight: 300, margin: "0 0 48px", textAlign: "center", lineHeight: 1.2, letterSpacing: "-0.02em" }}>
+            Projects with structured change management are 7x more likely to <span style={{ fontStyle: "italic" }}>succeed</span>.<sup><a href="https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/unlocking-success-in-digital-transformations" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.green, textDecoration: "none", fontSize: "0.5em", fontWeight: 600, position: "relative", top: "-0.3em", marginLeft: 2 }}>1</a></sup>
+          </h2>
         </Reveal>
 
-        <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <div className="grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "stretch" }}>
           {/* Without Grasp */}
-          <Reveal delay={0.1}>
-            <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)", padding: "36px 32px" }}>
+          <Reveal delay={0.1} style={{ display: "flex" }}>
+            <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)", padding: "36px 32px", flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
                 <div style={{ color: COLORS.red }}><Icon type="x" /></div>
                 <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.red, textTransform: "uppercase", letterSpacing: "0.08em" }}>Without Grasp</span>
@@ -366,8 +399,8 @@ export default function App() {
           </Reveal>
 
           {/* With Grasp */}
-          <Reveal delay={0.15}>
-            <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)", padding: "36px 32px" }}>
+          <Reveal delay={0.15} style={{ display: "flex" }}>
+            <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)", padding: "36px 32px", flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
                 <div style={{ color: COLORS.green }}><Icon type="check" /></div>
                 <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.green, textTransform: "uppercase", letterSpacing: "0.08em" }}>With Grasp</span>
@@ -464,7 +497,7 @@ export default function App() {
                 <tr>
                   <th style={{ padding: "20px 24px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.08em", width: "30%" }} />
                   <th style={{ padding: "20px 24px", textAlign: "center", fontSize: 12, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", width: "23.3%" }}>Do nothing</th>
-                  <th style={{ padding: "20px 24px", textAlign: "center", fontSize: 12, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", width: "23.3%" }}>Consultants</th>
+                  <th style={{ padding: "20px 24px", textAlign: "center", fontSize: 12, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", width: "23.3%" }}>Internal PM</th>
                   <th style={{ padding: "20px 24px", textAlign: "center", fontSize: 12, fontWeight: 700, color: COLORS.green, textTransform: "uppercase", letterSpacing: "0.06em", width: "23.3%", background: "rgba(46,125,50,0.04)" }}>Grasp</th>
                 </tr>
               </thead>
@@ -519,14 +552,16 @@ export default function App() {
           </SectionHeading>
         </Reveal>
 
-        <div className="grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20, maxWidth: 800, margin: "0 auto" }}>
+        <div className="grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20, maxWidth: 800, margin: "0 auto", alignItems: "stretch" }}>
           {TEAM.map((member, i) => (
-            <Reveal key={i} delay={i * 0.08}>
+            <Reveal key={i} delay={i * 0.08} style={{ height: "100%" }}>
               <div style={{
                 background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)",
                 borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)",
                 padding: "32px 24px", textAlign: "center",
                 transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                height: "100%", boxSizing: "border-box",
+                display: "flex", flexDirection: "column", alignItems: "center",
               }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.04)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
@@ -539,6 +574,7 @@ export default function App() {
                 <div style={{ fontSize: 17, fontWeight: 600, color: "#222", marginBottom: 2 }}>{member.name}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: COLORS.green, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>{member.role}</div>
                 <div style={{ fontSize: 13, color: "#777", lineHeight: 1.6, marginBottom: 14 }}>{member.bio}</div>
+                <div style={{ flexGrow: 1 }} />
                 <a
                   href={member.linkedin}
                   target="_blank"
@@ -556,18 +592,10 @@ export default function App() {
         </div>
 
         <Reveal delay={0.3}>
-          <p style={{ fontSize: 13, color: "#bbb", textAlign: "center", marginTop: 32, fontStyle: "italic", fontFamily: FONT.serif }}>
-            From Penn. Got tired of watching good software die from bad rollouts.
-          </p>
-        </Reveal>
-      </section>
-
-      {/* ─── Founder quote ─── */}
-      <section className="section-padding" style={{ maxWidth: 640, margin: "0 auto", padding: "40px 48px 60px", textAlign: "center" }}>
-        <Reveal>
-          <div style={{ width: 48, height: 1, background: "#ddd", margin: "0 auto 32px" }} />
-          <p style={{ fontFamily: FONT.serif, fontSize: 22, fontWeight: 300, fontStyle: "italic", color: "#444", lineHeight: 1.7, margin: "0 0 16px", letterSpacing: "-0.01em" }}>
-            "I've been the CTO who sends the announcement email, runs one training, and watches adoption flatline. I kept saying 'next time we'll do the communication part right.' We never did. So I built the thing that does it for you."
+          <p style={{ fontSize: 13, color: "#bbb", textAlign: "center", marginTop: 32, fontStyle: "italic", fontFamily: FONT.serif, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            Former roommates at
+            <img src="/penn-shield.svg" alt="University of Pennsylvania" style={{ height: 18, verticalAlign: "middle" }} />
+            Penn, the next team in your corner.
           </p>
         </Reveal>
       </section>
@@ -589,7 +617,7 @@ export default function App() {
                   placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && email) setSubmitted(true); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleWaitlist(); }}
                   style={{
                     flex: 1, padding: "15px 18px", borderRadius: 100,
                     border: "1px solid rgba(0,0,0,0.1)", fontSize: 14, outline: "none",
@@ -600,7 +628,8 @@ export default function App() {
                   onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(0,0,0,0.1)")}
                 />
                 <button
-                  onClick={() => { if (email) setSubmitted(true); }}
+                  onClick={handleWaitlist}
+                  disabled={submitting}
                   style={{
                     background: "#111", color: COLORS.bg, border: "none", padding: "15px 30px",
                     borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: "pointer",
@@ -609,11 +638,11 @@ export default function App() {
                   onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.97)")}
                   onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
                 >
-                  Join waitlist
+                  {submitting ? "Joining..." : "Join waitlist"}
                 </button>
               </div>
               <button
-                onClick={() => window.open("https://calendly.com/akashjain-grasp/30min", "_blank")}
+                onClick={() => window.open("https://calendar.app.google/nYd9AsDNHrXup8Lk9", "_blank")}
                 style={{ background: "transparent", color: COLORS.faint, border: "none", fontSize: 13, cursor: "pointer", padding: 8, fontWeight: 500 }}
               >
                 or book a 15-minute call →
