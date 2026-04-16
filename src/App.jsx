@@ -177,8 +177,8 @@ const WITH = [
 ];
 
 const COMPARISON_ROWS = [
-  { row: "Cost", c1: "$0 up front", c2: "$110K–$170K/yr salary", c3: "$500/mo" },
-  { row: "Time to first message", c1: "Day of go-live", c2: "2–6 weeks", c3: "Same day" },
+  { row: "Cost", c1: "$0 up front", c2: "$110K-$170K/yr salary", c3: "$500/mo" },
+  { row: "Time to first message", c1: "Day of go-live", c2: "2-6 weeks", c3: "Same day" },
   { row: "Personalized by dept.", c1: "No", c2: "If they have bandwidth", c3: "Always" },
   { row: "Adapts to engagement", c1: "No", c2: "Manually, if tracked", c3: "Automatically" },
   { row: "Scales across rollouts", c1: "No", c2: "One at a time", c3: "Unlimited" },
@@ -249,6 +249,13 @@ export default function App() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [hoveredStep, setHoveredStep] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const handleWaitlist = () => {
     if (!email || submitting) return;
@@ -299,7 +306,7 @@ export default function App() {
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 9999, opacity: 0.04, mixBlendMode: "multiply", backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`, backgroundRepeat: "repeat", backgroundSize: "256px 256px" }} />
 
       {/* ─── Nav ─── */}
-      <nav className="nav-padding" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "22px 48px", maxWidth: 1200, margin: "0 auto" }}>
+      <nav aria-label="Main navigation" className="nav-padding" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 48px", background: scrolled ? "rgba(250, 249, 246, 0.72)" : "transparent", backdropFilter: scrolled ? "saturate(180%) blur(20px)" : "none", WebkitBackdropFilter: scrolled ? "saturate(180%) blur(20px)" : "none", borderBottom: scrolled ? "1px solid rgba(0, 0, 0, 0.06)" : "1px solid transparent", transition: "background 0.3s ease, backdrop-filter 0.3s ease, border-bottom 0.3s ease" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <SproutLogo size={26} />
           <span style={{ fontFamily: FONT.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.03em" }}>grasp</span>
@@ -321,7 +328,7 @@ export default function App() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <section className="section-padding" style={{ maxWidth: 860, margin: "0 auto", padding: "100px 48px 80px", textAlign: "center" }}>
+      <section className="section-padding" style={{ maxWidth: 860, margin: "0 auto", padding: "140px 48px 80px", textAlign: "center" }}>
         <Reveal>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(46,125,50,0.08)", color: COLORS.green, fontSize: 12, fontWeight: 600, padding: "5px 16px", borderRadius: 100, marginBottom: 28, letterSpacing: "0.05em", textTransform: "uppercase" }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.green }} />
@@ -491,27 +498,51 @@ export default function App() {
       {/* ─── Comparison table ─── */}
       <section className="section-padding" style={{ maxWidth: 860, margin: "0 auto", padding: "60px 48px 80px" }}>
         <Reveal>
-          <div style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)", overflow: "hidden" }}>
-            <table className="comparison-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          {/* Desktop table */}
+          <div className="comparison-desktop" style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)", overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  <th style={{ padding: "20px 24px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.08em", width: "30%" }} />
-                  <th style={{ padding: "20px 24px", textAlign: "center", fontSize: 12, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", width: "23.3%" }}>Do nothing</th>
-                  <th style={{ padding: "20px 24px", textAlign: "center", fontSize: 12, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", width: "23.3%" }}>Internal PM</th>
-                  <th style={{ padding: "20px 24px", textAlign: "center", fontSize: 12, fontWeight: 700, color: COLORS.green, textTransform: "uppercase", letterSpacing: "0.06em", width: "23.3%", background: "rgba(46,125,50,0.04)" }}>Grasp</th>
+                  <th style={{ padding: "20px 16px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.08em", width: "28%" }} />
+                  <th style={{ padding: "20px 12px", textAlign: "center", fontSize: 12, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", width: "24%" }}>Do nothing</th>
+                  <th style={{ padding: "20px 12px", textAlign: "center", fontSize: 12, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em", width: "24%" }}>Internal PM</th>
+                  <th style={{ padding: "20px 12px", textAlign: "center", fontSize: 12, fontWeight: 700, color: COLORS.green, textTransform: "uppercase", letterSpacing: "0.06em", width: "24%", background: "rgba(46,125,50,0.04)" }}>Grasp</th>
                 </tr>
               </thead>
               <tbody>
                 {COMPARISON_ROWS.map((r, i) => (
                   <tr key={i} style={{ borderTop: "1px solid rgba(0,0,0,0.04)" }}>
-                    <td style={{ padding: "14px 24px", fontSize: 13, fontWeight: 600, color: "#555" }}>{r.row}</td>
-                    <td style={{ padding: "14px 24px", textAlign: "center", fontSize: 13, color: "#bbb" }}>{r.c1}</td>
-                    <td style={{ padding: "14px 24px", textAlign: "center", fontSize: 13, color: "#999" }}>{r.c2}</td>
-                    <td style={{ padding: "14px 24px", textAlign: "center", fontSize: 13, color: COLORS.green, fontWeight: 600, background: "rgba(46,125,50,0.04)" }}>{r.c3}</td>
+                    <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 600, color: "#555", whiteSpace: "nowrap" }}>{r.row}</td>
+                    <td style={{ padding: "14px 12px", textAlign: "center", fontSize: 13, color: "#bbb" }}>{r.c1}</td>
+                    <td style={{ padding: "14px 12px", textAlign: "center", fontSize: 13, color: "#999" }}>{r.c2}</td>
+                    <td style={{ padding: "14px 12px", textAlign: "center", fontSize: 13, color: COLORS.green, fontWeight: 600, background: "rgba(46,125,50,0.04)" }}>{r.c3}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="comparison-mobile" style={{ display: "none", flexDirection: "column", gap: 12 }}>
+            {COMPARISON_ROWS.map((r, i) => (
+              <div key={i} style={{ background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", borderRadius: 14, border: "1px solid rgba(0,0,0,0.05)", padding: "18px 20px" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#444", marginBottom: 10 }}>{r.row}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                    <span style={{ color: "#bbb" }}>Do nothing</span>
+                    <span style={{ color: "#bbb" }}>{r.c1}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                    <span style={{ color: "#999" }}>Internal PM</span>
+                    <span style={{ color: "#999" }}>{r.c2}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, background: "rgba(46,125,50,0.04)", margin: "0 -8px", padding: "6px 8px", borderRadius: 6 }}>
+                    <span style={{ color: COLORS.green, fontWeight: 600 }}>Grasp</span>
+                    <span style={{ color: COLORS.green, fontWeight: 600 }}>{r.c3}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </Reveal>
       </section>
@@ -527,7 +558,7 @@ export default function App() {
               Your next rollout is coming.
             </h2>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", textAlign: "center", margin: "0 auto 36px", maxWidth: 460, position: "relative" }}>
-              Whether it's Copilot, a CRM migration, or an AI tool your CEO just bought — the adoption problem is the same.
+              Whether it's Copilot, a CRM migration, or an AI tool your CEO just bought. The adoption problem is the same.
             </p>
 
             <div className="scenario-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, position: "relative" }}>
@@ -594,7 +625,7 @@ export default function App() {
         <Reveal delay={0.3}>
           <p style={{ fontSize: 13, color: "#bbb", textAlign: "center", marginTop: 32, fontStyle: "italic", fontFamily: FONT.serif, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             Former roommates at
-            <img src="/penn-shield.svg" alt="University of Pennsylvania" style={{ height: 18, verticalAlign: "middle" }} />
+            <img src="/penn-shield.svg" alt="University of Pennsylvania" style={{ height: 18, width: "auto", display: "inline-block", flexShrink: 0 }} />
             Penn, the next team in your corner.
           </p>
         </Reveal>
@@ -645,7 +676,7 @@ export default function App() {
                 onClick={() => window.open("https://calendar.app.google/nYd9AsDNHrXup8Lk9", "_blank")}
                 style={{ background: "transparent", color: COLORS.faint, border: "none", fontSize: 13, cursor: "pointer", padding: 8, fontWeight: 500 }}
               >
-                or book a 15-minute call →
+                or meet us →
               </button>
             </div>
           ) : (
