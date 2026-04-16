@@ -111,14 +111,18 @@ function Icon({ type, size = 40 }) {
 }
 
 function SproutLogo({ size = 24, muted = false }) {
-  const light = muted ? "#ccc" : "#4CAF50";
-  const dark = muted ? "#bbb" : "#2E7D32";
+  const primary = muted ? "#ccc" : "#2E7D32";
+  const secondary = muted ? "#ddd" : "#4CAF50";
   return (
     <svg viewBox="0 0 64 64" fill="none" style={{ width: size, height: size }}>
-      <path d="M35 26C41 18 49 10 54 6C51 17 43 27 35 32Z" fill={light} />
-      <path d="M29 35C23 29 15 21 10 16C14 27 23 35 29 39Z" fill={dark} />
-      <line x1="32" y1="56" x2="32" y2="22" stroke={dark} strokeWidth="5" strokeLinecap="round" />
-      <circle cx="32" cy="56" r="5" fill={dark} />
+      {/* Stem — gentle organic curve */}
+      <path d="M32 56C32 56 30 44 31 36C32 28 32 24 32 24" stroke={primary} strokeWidth="3.5" strokeLinecap="round" fill="none" />
+      {/* Right leaf — large, full, smooth */}
+      <path d="M32 28C34 22 40 12 54 6C52 14 46 26 32 28Z" fill={secondary} />
+      <path d="M32 28C36 20 44 12 54 6" stroke={primary} strokeWidth="1.2" fill="none" opacity="0.3" />
+      {/* Left leaf — large, full, smooth */}
+      <path d="M31 36C28 30 20 20 8 14C10 24 20 34 31 36Z" fill={primary} />
+      <path d="M31 36C26 28 18 20 8 14" stroke={primary} strokeWidth="1.2" fill="none" opacity="0.2" />
     </svg>
   );
 }
@@ -267,20 +271,19 @@ export default function App() {
           <SproutLogo size={26} />
           <span style={{ fontFamily: FONT.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.03em" }}>grasp</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontFamily: FONT.sans, fontSize: 12, fontWeight: 500, color: COLORS.muted, position: "relative", top: -2 }}>
-            Text us
-          </span>
-          <svg width="24" height="20" viewBox="0 0 24 20" fill="none" style={{ position: "relative", top: 2 }}>
-            <path d="M4 2C8 4 14 10 18 16" stroke={COLORS.muted} strokeWidth="1.5" strokeLinecap="round" fill="none" />
-            <path d="M14 14L18 16L16 11" stroke={COLORS.muted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-          </svg>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0 }}>
           <a
-            href="sms:9196015897"
+            href="sms:9196015897&body=I'd love to learn more about Grasp!"
             style={{ fontFamily: FONT.sans, fontSize: 15, fontWeight: 600, color: COLORS.text, letterSpacing: "-0.01em", textDecoration: "none" }}
           >
             (919) 601-5897
           </a>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+            <span style={{ fontFamily: FONT.sans, fontSize: 11, fontWeight: 500, color: COLORS.faint, letterSpacing: "0.02em" }}>
+              Text us
+            </span>
+            <span style={{ fontSize: 13, color: COLORS.faint, lineHeight: 1, transform: "scaleX(0.7)", display: "inline-block" }}>↑</span>
+          </div>
         </div>
       </nav>
 
@@ -300,24 +303,13 @@ export default function App() {
         </Reveal>
         <Reveal delay={0.16}>
           <p style={{ fontSize: 17, color: COLORS.muted, lineHeight: 1.75, margin: "0 auto 44px", maxWidth: 600, fontWeight: 400 }}>
-            Grasp builds and executes the internal communication campaign for your technology rollouts.{" "}
+            Grasp builds and executes the internal communication campaign for your technology rollouts. Memos,{" "}
             <span style={{ whiteSpace: "nowrap" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" style={{ verticalAlign: "-2px", marginRight: 2 }}>
-                <path d="M14.72 7.16c.47-.47.47-1.24 0-1.72a1.22 1.22 0 0 0-1.72 0L7.16 11.28c-.47.47-.47 1.24 0 1.72l5.84 5.84c.47.47 1.24.47 1.72 0 .47-.47.47-1.24 0-1.72L9.88 12.28l4.84-5.12Z" fill="#5B5FC7"/>
-                <path d="M14.72 7.16c.47-.47.47-1.24 0-1.72a1.22 1.22 0 0 0-1.72 0L7.16 11.28c-.47.47-.47 1.24 0 1.72l5.84 5.84c.47.47 1.24.47 1.72 0 .47-.47.47-1.24 0-1.72L9.88 12.28l4.84-5.12Z" fill="none"/>
-                <rect x="2" y="2" width="20" height="20" rx="3" fill="#5B5FC7"/>
-                <path d="M15.41 7h-3.06l-3.64 4.24v.52l3.82 4.24h3.24l-4.01-4.38L15.41 7ZM8.59 7H6.5v9h2.09V7Z" fill="white"/>
-              </svg>
+              <img src="/teams-logo.svg" alt="Teams" width="16" height="16" style={{ verticalAlign: "-2px", marginRight: 2, display: "inline" }} />
               Teams,
             </span>{" "}
             <span style={{ whiteSpace: "nowrap" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" style={{ verticalAlign: "-2px", marginRight: 2 }}>
-                <rect x="2" y="2" width="20" height="20" rx="5" fill="#4A154B"/>
-                <path d="M8.84 14.27a1.14 1.14 0 1 1-2.28 0 1.14 1.14 0 0 1 1.14-1.14h1.14v1.14Zm.58 0a1.14 1.14 0 1 1 2.28 0v2.86a1.14 1.14 0 1 1-2.28 0v-2.86Z" fill="#E01E5A"/>
-                <path d="M9.73 8.84a1.14 1.14 0 1 1 0-2.28 1.14 1.14 0 0 1 1.14 1.14v1.14H9.73Zm0 .58a1.14 1.14 0 1 1 0 2.28H6.87a1.14 1.14 0 1 1 0-2.28h2.86Z" fill="#36C5F0"/>
-                <path d="M15.16 9.73a1.14 1.14 0 1 1 2.28 0 1.14 1.14 0 0 1-1.14 1.14h-1.14V9.73Zm-.58 0a1.14 1.14 0 1 1-2.28 0V6.87a1.14 1.14 0 1 1 2.28 0v2.86Z" fill="#2EB67D"/>
-                <path d="M14.27 15.16a1.14 1.14 0 1 1 0 2.28 1.14 1.14 0 0 1-1.14-1.14v-1.14h1.14Zm0-.58a1.14 1.14 0 1 1 0-2.28h2.86a1.14 1.14 0 1 1 0 2.28h-2.86Z" fill="#ECB22E"/>
-              </svg>
+              <img src="/slack-logo.svg" alt="Slack" width="16" height="16" style={{ verticalAlign: "-2px", marginRight: 2, display: "inline" }} />
               Slack,
             </span>{" "}
             manager briefings, follow-ups, all autonomously.
