@@ -110,6 +110,19 @@ function Icon({ type, size = 40 }) {
   );
 }
 
+function SproutLogo({ size = 24, muted = false }) {
+  const light = muted ? "#ccc" : "#4CAF50";
+  const dark = muted ? "#bbb" : "#2E7D32";
+  return (
+    <svg viewBox="0 0 64 64" fill="none" style={{ width: size, height: size }}>
+      <path d="M35 26C41 18 49 10 54 6C51 17 43 27 35 32Z" fill={light} />
+      <path d="M29 35C23 29 15 21 10 16C14 27 23 35 29 39Z" fill={dark} />
+      <line x1="32" y1="56" x2="32" y2="22" stroke={dark} strokeWidth="5" strokeLinecap="round" />
+      <circle cx="32" cy="56" r="5" fill={dark} />
+    </svg>
+  );
+}
+
 /* ── Shared styles ── */
 const FONT = {
   serif: "'Newsreader', serif",
@@ -250,15 +263,25 @@ export default function App() {
 
       {/* ─── Nav ─── */}
       <nav className="nav-padding" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "22px 48px", maxWidth: 1200, margin: "0 auto" }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.03em" }}>grasp</div>
-        <button
-          onClick={scrollToCta}
-          style={{ background: "#111", color: COLORS.bg, border: "none", padding: "10px 26px", borderRadius: 100, fontSize: 13, fontWeight: 600, cursor: "pointer", letterSpacing: "0.01em", fontFamily: FONT.sans, transition: "transform 0.15s ease" }}
-          onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.97)")}
-          onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-        >
-          Get early access
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <SproutLogo size={26} />
+          <span style={{ fontFamily: FONT.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.03em" }}>grasp</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontFamily: FONT.sans, fontSize: 12, fontWeight: 500, color: COLORS.muted, position: "relative", top: -2 }}>
+            Text us
+          </span>
+          <svg width="24" height="20" viewBox="0 0 24 20" fill="none" style={{ position: "relative", top: 2 }}>
+            <path d="M4 2C8 4 14 10 18 16" stroke={COLORS.muted} strokeWidth="1.5" strokeLinecap="round" fill="none" />
+            <path d="M14 14L18 16L16 11" stroke={COLORS.muted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+          <a
+            href="sms:9196015897"
+            style={{ fontFamily: FONT.sans, fontSize: 15, fontWeight: 600, color: COLORS.text, letterSpacing: "-0.01em", textDecoration: "none" }}
+          >
+            (919) 601-5897
+          </a>
+        </div>
       </nav>
 
       {/* ─── Hero ─── */}
@@ -595,7 +618,10 @@ export default function App() {
 
       {/* ─── Footer ─── */}
       <footer style={{ borderTop: "1px solid rgba(0,0,0,0.05)", padding: "28px 48px", textAlign: "center" }}>
-        <div style={{ fontFamily: FONT.serif, fontSize: 18, color: "#ccc", letterSpacing: "-0.02em" }}>grasp</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          <SproutLogo size={18} muted />
+          <span style={{ fontFamily: FONT.serif, fontSize: 18, color: "#ccc", letterSpacing: "-0.02em" }}>grasp</span>
+        </div>
         <div style={{ fontSize: 11, color: "#ddd", marginTop: 4, letterSpacing: "0.02em" }}>
           The AI agent that runs your technology rollout campaigns.
         </div>
