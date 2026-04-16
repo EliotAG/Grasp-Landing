@@ -299,8 +299,28 @@ export default function App() {
           </h1>
         </Reveal>
         <Reveal delay={0.16}>
-          <p style={{ fontSize: 17, color: COLORS.muted, lineHeight: 1.75, margin: "0 auto 44px", maxWidth: 540, fontWeight: 400 }}>
-            An AI agent that builds and executes the entire internal communication campaign for your technology rollouts — emails, Slack, manager briefings, follow-ups — autonomously.
+          <p style={{ fontSize: 17, color: COLORS.muted, lineHeight: 1.75, margin: "0 auto 44px", maxWidth: 600, fontWeight: 400 }}>
+            Grasp builds and executes the internal communication campaign for your technology rollouts.{" "}
+            <span style={{ whiteSpace: "nowrap" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" style={{ verticalAlign: "-2px", marginRight: 2 }}>
+                <path d="M14.72 7.16c.47-.47.47-1.24 0-1.72a1.22 1.22 0 0 0-1.72 0L7.16 11.28c-.47.47-.47 1.24 0 1.72l5.84 5.84c.47.47 1.24.47 1.72 0 .47-.47.47-1.24 0-1.72L9.88 12.28l4.84-5.12Z" fill="#5B5FC7"/>
+                <path d="M14.72 7.16c.47-.47.47-1.24 0-1.72a1.22 1.22 0 0 0-1.72 0L7.16 11.28c-.47.47-.47 1.24 0 1.72l5.84 5.84c.47.47 1.24.47 1.72 0 .47-.47.47-1.24 0-1.72L9.88 12.28l4.84-5.12Z" fill="none"/>
+                <rect x="2" y="2" width="20" height="20" rx="3" fill="#5B5FC7"/>
+                <path d="M15.41 7h-3.06l-3.64 4.24v.52l3.82 4.24h3.24l-4.01-4.38L15.41 7ZM8.59 7H6.5v9h2.09V7Z" fill="white"/>
+              </svg>
+              Teams,
+            </span>{" "}
+            <span style={{ whiteSpace: "nowrap" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" style={{ verticalAlign: "-2px", marginRight: 2 }}>
+                <rect x="2" y="2" width="20" height="20" rx="5" fill="#4A154B"/>
+                <path d="M8.84 14.27a1.14 1.14 0 1 1-2.28 0 1.14 1.14 0 0 1 1.14-1.14h1.14v1.14Zm.58 0a1.14 1.14 0 1 1 2.28 0v2.86a1.14 1.14 0 1 1-2.28 0v-2.86Z" fill="#E01E5A"/>
+                <path d="M9.73 8.84a1.14 1.14 0 1 1 0-2.28 1.14 1.14 0 0 1 1.14 1.14v1.14H9.73Zm0 .58a1.14 1.14 0 1 1 0 2.28H6.87a1.14 1.14 0 1 1 0-2.28h2.86Z" fill="#36C5F0"/>
+                <path d="M15.16 9.73a1.14 1.14 0 1 1 2.28 0 1.14 1.14 0 0 1-1.14 1.14h-1.14V9.73Zm-.58 0a1.14 1.14 0 1 1-2.28 0V6.87a1.14 1.14 0 1 1 2.28 0v2.86Z" fill="#2EB67D"/>
+                <path d="M14.27 15.16a1.14 1.14 0 1 1 0 2.28 1.14 1.14 0 0 1-1.14-1.14v-1.14h1.14Zm0-.58a1.14 1.14 0 1 1 0-2.28h2.86a1.14 1.14 0 1 1 0 2.28h-2.86Z" fill="#ECB22E"/>
+              </svg>
+              Slack,
+            </span>{" "}
+            manager briefings, follow-ups, all autonomously.
           </p>
         </Reveal>
         <Reveal delay={0.24}>
