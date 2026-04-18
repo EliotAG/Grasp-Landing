@@ -595,7 +595,7 @@ export default function App() {
         <Reveal delay={0.3}>
           <p style={{ fontSize: 13, color: "#bbb", textAlign: "center", marginTop: 32, fontStyle: "italic", fontFamily: FONT.serif }}>
             Former roommates at{" "}
-            <img src="/penn-shield.svg" alt="University of Pennsylvania" style={{ height: 16, width: "auto", display: "inline", verticalAlign: "-2px" }} />
+            <img src="/penn-shield.svg" alt="University of Pennsylvania" width={19} height={16} style={{ height: 16, width: 19, display: "inline", verticalAlign: "-2px" }} />
             {" "}Penn, the next team in your corner.
           </p>
         </Reveal>
