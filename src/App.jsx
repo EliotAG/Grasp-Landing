@@ -580,6 +580,9 @@ export default function App() {
                 <img
                   src={member.photo}
                   alt={member.name}
+                  width={80}
+                  height={80}
+                  loading="lazy"
                   style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", margin: "0 auto 16px" }}
                 />
                 <div style={{ fontSize: 17, fontWeight: 600, color: "#222", marginBottom: 2 }}>{member.name}</div>
