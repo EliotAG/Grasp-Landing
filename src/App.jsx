@@ -672,9 +672,9 @@ export default function App() {
       <footer style={{ borderTop: "1px solid rgba(0,0,0,0.05)", padding: "28px 48px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
           <SproutLogo size={18} muted />
-          <span style={{ fontFamily: FONT.serif, fontSize: 18, color: "#999", letterSpacing: "-0.02em" }}>grasp</span>
+          <span style={{ fontFamily: FONT.serif, fontSize: 18, color: "#767676", letterSpacing: "-0.02em" }}>grasp</span>
         </div>
-        <div style={{ fontSize: 11, color: "#999", marginTop: 4, letterSpacing: "0.02em" }}>
+        <div style={{ fontSize: 11, color: "#767676", marginTop: 4, letterSpacing: "0.02em" }}>
           The AI agent that runs your technology rollout campaigns.
         </div>
       </footer>
