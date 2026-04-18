@@ -219,7 +219,7 @@ const TEAM = [
 /* ── Reusable section label ── */
 function SectionLabel({ children }) {
   return (
-    <p style={{ fontSize: 12, fontWeight: 700, color: COLORS.faint, textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px", textAlign: "center", fontFamily: FONT.sans }}>
+    <p style={{ fontSize: 12, fontWeight: 700, color: "#777", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px", textAlign: "center", fontFamily: FONT.sans }}>
       {children}
     </p>
   );
@@ -593,6 +593,7 @@ export default function App() {
                   href={member.linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={`${member.name} on LinkedIn`}
                   style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#555", fontSize: 13, fontWeight: 500, textDecoration: "none", transition: "color 0.2s ease" }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.green)}
                   onMouseLeave={(e) => (e.currentTarget.style.color = "#555")}
@@ -675,9 +676,9 @@ export default function App() {
       <footer style={{ borderTop: "1px solid rgba(0,0,0,0.05)", padding: "28px 48px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
           <SproutLogo size={18} muted />
-          <span style={{ fontFamily: FONT.serif, fontSize: 18, color: "#ccc", letterSpacing: "-0.02em" }}>grasp</span>
+          <span style={{ fontFamily: FONT.serif, fontSize: 18, color: "#999", letterSpacing: "-0.02em" }}>grasp</span>
         </div>
-        <div style={{ fontSize: 11, color: "#ddd", marginTop: 4, letterSpacing: "0.02em" }}>
+        <div style={{ fontSize: 11, color: "#999", marginTop: 4, letterSpacing: "0.02em" }}>
           The AI agent that runs your technology rollout campaigns.
         </div>
       </footer>
