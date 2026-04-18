@@ -27,7 +27,31 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=DM+Sans:wght@400;500;600;700&display=swap" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=DM+Sans:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=DM+Sans:wght@400;500;600;700&display=swap" /></noscript>
+
+    <style>
+      *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+      body{margin:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+      img{display:block;max-width:100%}
+      @keyframes drift1{0%,100%{transform:translate(0,0)}25%{transform:translate(3%,-4%)}50%{transform:translate(-2%,3%)}75%{transform:translate(4%,1%)}}
+      @keyframes drift2{0%,100%{transform:translate(0,0)}25%{transform:translate(-4%,2%)}50%{transform:translate(3%,-3%)}75%{transform:translate(-1%,4%)}}
+      @keyframes drift3{0%,100%{transform:translate(0,0)}25%{transform:translate(2%,3%)}50%{transform:translate(-3%,-2%)}75%{transform:translate(1%,-4%)}}
+      .glow-orb-1{animation:drift1 80s ease-in-out infinite}
+      .glow-orb-2{animation:drift2 90s ease-in-out infinite}
+      .glow-orb-3{animation:drift3 70s ease-in-out infinite}
+      @media(max-width:768px){
+        .grid-2{grid-template-columns:1fr!important}
+        .grid-3{grid-template-columns:1fr!important}
+        .hero-buttons{flex-direction:column;align-items:center}
+        .scroll-fade{display:block!important}
+        .scenario-grid{grid-template-columns:1fr!important}
+        .step-row{flex-direction:column;gap:12px!important}
+        .step-number{text-align:left!important;min-width:unset!important}
+        .section-padding{padding-left:24px!important;padding-right:24px!important}
+        .nav-padding{padding-left:24px!important;padding-right:24px!important}
+      }
+    </style>
     <link rel="canonical" href="https://www.withgrasp.com" />
 
     <!-- Open Graph -->
