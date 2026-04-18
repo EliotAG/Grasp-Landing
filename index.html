@@ -8,16 +8,26 @@
     <meta name="description" content="Grasp builds and executes the internal communication campaign for your technology rollouts. Teams, Slack, manager briefings, follow-ups, all autonomously." />
     <meta name="keywords" content="technology rollout, change management, internal communication, adoption, AI agent, Slack, Microsoft Teams, employee communication, software rollout" />
 
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DEVZQKCM07"></script>
+    <!-- Google tag (gtag.js) — deferred until after page load -->
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-DEVZQKCM07');
+      window.addEventListener('load', function() {
+        var s = document.createElement('script');
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-DEVZQKCM07';
+        s.async = true;
+        document.head.appendChild(s);
+        s.onload = function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-DEVZQKCM07');
+        };
+      });
     </script>
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=DM+Sans:wght@400;500;600;700&display=swap" />
     <link rel="canonical" href="https://www.withgrasp.com" />
 
     <!-- Open Graph -->

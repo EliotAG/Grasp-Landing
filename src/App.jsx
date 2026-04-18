@@ -273,10 +273,6 @@ export default function App() {
 
   return (
     <div style={{ fontFamily: FONT.sans, color: COLORS.text, position: "relative", overflow: "hidden" }}>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=DM+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-      />
 
       {/* ── Background layers ── */}
       {/* Base gradient */}
