@@ -248,7 +248,6 @@ export default function App() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [hoveredStep, setHoveredStep] = useState(null);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -354,10 +353,9 @@ export default function App() {
         <Reveal delay={0.24}>
           <div className="hero-buttons" style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
             <button
+              className="btn-press"
               onClick={scrollToCta}
-              style={{ background: "#111", color: COLORS.bg, border: "none", padding: "15px 36px", borderRadius: 100, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: FONT.sans, transition: "transform 0.15s ease, box-shadow 0.2s ease", boxShadow: "0 2px 20px rgba(0,0,0,0.08)" }}
-              onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.97)")}
-              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              style={{ background: "#111", color: COLORS.bg, border: "none", padding: "15px 36px", borderRadius: 100, fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: FONT.sans, boxShadow: "0 2px 20px rgba(0,0,0,0.08)" }}
             >
               Join the waitlist
             </button>
@@ -435,13 +433,10 @@ export default function App() {
             <Reveal key={i} delay={i * 0.08}>
               <div
                 className="step-row"
-                onMouseEnter={() => setHoveredStep(i)}
-                onMouseLeave={() => setHoveredStep(null)}
                 style={{
                   display: "flex", gap: 28, padding: "32px 24px",
                   borderTop: i > 0 ? "1px solid rgba(0,0,0,0.05)" : "none",
-                  borderRadius: 16, transition: "background 0.3s ease",
-                  background: hoveredStep === i ? "rgba(255,255,255,0.4)" : "transparent",
+                  borderRadius: 16,
                   cursor: "default",
                 }}
               >
@@ -474,13 +469,12 @@ export default function App() {
           {FEATURES.map((f, i) => (
             <Reveal key={i} delay={i * 0.06}>
               <div
+                className="card-hover"
                 style={{
                   background: "rgba(255,255,255,0.45)", backdropFilter: "blur(12px)",
                   borderRadius: 16, border: "1px solid rgba(0,0,0,0.04)",
-                  padding: "28px 24px", transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                  padding: "28px 24px",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.04)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
               >
                 <div style={{ color: f.color, marginBottom: 14 }}><Icon type={f.icon} /></div>
                 <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: "#222" }}>{f.title}</div>
@@ -562,16 +556,13 @@ export default function App() {
         <div className="grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20, maxWidth: 800, margin: "0 auto", alignItems: "stretch" }}>
           {TEAM.map((member, i) => (
             <Reveal key={i} delay={i * 0.08} style={{ height: "100%" }}>
-              <div style={{
+              <div className="card-hover" style={{
                 background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)",
                 borderRadius: 20, border: "1px solid rgba(0,0,0,0.05)",
                 padding: "32px 24px", textAlign: "center",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
                 height: "100%", boxSizing: "border-box",
                 display: "flex", flexDirection: "column", alignItems: "center",
               }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.04)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
               >
                 <img
                   src={member.photo}
@@ -590,9 +581,8 @@ export default function App() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`${member.name} on LinkedIn`}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#555", fontSize: 13, fontWeight: 500, textDecoration: "none", transition: "color 0.2s ease" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.green)}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#555")}
+                  className="link-hover"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#555", fontSize: 13, fontWeight: 500, textDecoration: "none" }}
                 >
                   <Icon type="linkedin" size={16} />
                   LinkedIn
@@ -639,15 +629,14 @@ export default function App() {
                   onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(0,0,0,0.1)")}
                 />
                 <button
+                  className="btn-press"
                   onClick={handleWaitlist}
                   disabled={submitting}
                   style={{
                     background: "#111", color: COLORS.bg, border: "none", padding: "15px 30px",
                     borderRadius: 100, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                    whiteSpace: "nowrap", fontFamily: FONT.sans, transition: "transform 0.15s ease",
+                    whiteSpace: "nowrap", fontFamily: FONT.sans,
                   }}
-                  onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.97)")}
-                  onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
                 >
                   {submitting ? "Joining..." : "Join waitlist"}
                 </button>
