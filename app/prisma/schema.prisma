@@ -119,6 +119,7 @@ model Organization {
   employees    Employee[]
   changePlans  ChangePlan[]
   teamsIntegration OrganizationTeamsIntegration?
+  slackIntegration OrganizationSlackIntegration?
 
   @@map("organization")
 }
@@ -148,6 +149,33 @@ model OrganizationTeamsIntegration {
   @@index([microsoftAppId])
   @@index([microsoftTenantId])
   @@map("organization_teams_integration")
+}
+
+model OrganizationSlackIntegration {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @unique @map("organization_id") @db.Uuid
+
+  /// Tenant-owned Slack integration switch. Disabled rows intentionally
+  /// suppress the global env fallback for this organization.
+  enabled Boolean @default(false)
+
+  slackTeamId             String? @map("slack_team_id")
+  slackTeamName           String? @map("slack_team_name")
+  slackAppId              String? @map("slack_app_id")
+  slackBotUserId          String? @map("slack_bot_user_id")
+  slackBotTokenEncrypted  String? @map("slack_bot_token_encrypted")
+  slackSigningSecretEncrypted String? @map("slack_signing_secret_encrypted")
+
+  lastCheckedAt  DateTime? @map("last_checked_at")
+  lastCheckError String?   @map("last_check_error")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([slackTeamId])
+  @@index([slackAppId])
+  @@map("organization_slack_integration")
 }
 
 model Membership {
@@ -206,6 +234,8 @@ model Employee {
   teamsAppInstalledAt         DateTime? @map("teams_app_installed_at")
   teamsBootstrapCheckedAt     DateTime? @map("teams_bootstrap_checked_at")
   teamsBootstrapError         String?   @map("teams_bootstrap_error")
+  slackBootstrapCheckedAt     DateTime? @map("slack_bootstrap_checked_at")
+  slackBootstrapError         String?   @map("slack_bootstrap_error")
   /// Self-reference; nullable for top-of-tree (CEO, etc).
   managerEmployeeId String?  @map("manager_employee_id") @db.Uuid
   createdAt         DateTime @default(now()) @map("created_at")
@@ -218,6 +248,7 @@ model Employee {
   stakeholderMemberships StakeholderGroupMember[]
   changeEnrollments      ChangeEnrollment[]
   teamsConversationReferences TeamsConversationReference[]
+  slackContacts          SlackContact[]
 
   @@unique([organizationId, email])
   @@unique([organizationId, microsoftAadObjectId])
@@ -455,6 +486,55 @@ model TeamsConversationReference {
   @@map("teams_conversation_reference")
 }
 
+// -----------------------------------------------------------------------
+// Slack contacts.
+//
+// Bootstrapped from the org chart email via Slack users.lookupByEmail, then
+// conversations.open gives us a bot DM channel before the employee ever
+// messages Grasp. That stored channel powers kickoff DMs and ongoing
+// proactive check-ins.
+// -----------------------------------------------------------------------
+
+model SlackContact {
+  id             String  @id @default(uuid()) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  employeeId     String? @map("employee_id") @db.Uuid
+
+  slackTeamId    String @map("slack_team_id")
+  slackUserId    String @map("slack_user_id")
+  slackDmChannelId String? @map("slack_dm_channel_id")
+  userEmail      String? @map("user_email")
+  userName       String? @map("user_name")
+
+  bootstrapCheckedAt DateTime? @map("bootstrap_checked_at")
+  bootstrapError     String?   @map("bootstrap_error")
+  lastActivityAt     DateTime  @default(now()) @map("last_activity_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt        @map("updated_at")
+
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@unique([slackTeamId, slackUserId])
+  @@unique([organizationId, employeeId])
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([userEmail])
+  @@map("slack_contact")
+}
+
+model SlackEventReceipt {
+  id             String   @id @default(uuid()) @db.Uuid
+  slackEventId   String   @unique @map("slack_event_id")
+  slackTeamId    String?  @map("slack_team_id")
+  organizationId String?  @map("organization_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([slackTeamId])
+  @@index([organizationId])
+  @@map("slack_event_receipt")
+}
+
 model TrainingDocument {
   id              String                 @id @default(uuid()) @db.Uuid
   changePlanId    String                 @map("change_plan_id") @db.Uuid
@@ -658,6 +738,7 @@ enum AgentMessageRole {
 
 enum AgentMessageChannel {
   teams
+  slack
   simulator
   email
   system
