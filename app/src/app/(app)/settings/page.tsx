@@ -10,6 +10,10 @@ import {
   describeTeamsConfigProblem,
   getOrganizationTeamsConfig,
 } from "@/lib/teams/integration";
+import {
+  describeSlackConfigProblem,
+  getOrganizationSlackConfig,
+} from "@/lib/slack/integration";
 import { InviteMemberForm } from "./invite-form";
 
 export const metadata = { title: "Settings" };
@@ -17,8 +21,10 @@ export const metadata = { title: "Settings" };
 export default async function SettingsPage() {
   const session = await auth();
   const organizationId = session!.user.organizationId!;
-  const [teamsConfig, members, pendingInvites, employees] = await Promise.all([
+  const [teamsConfig, slackConfig, members, pendingInvites, employees] =
+    await Promise.all([
     getOrganizationTeamsConfig(organizationId),
+    getOrganizationSlackConfig(organizationId),
     prisma.membership.findMany({
       where: { organizationId },
       include: { user: { select: { name: true, email: true, image: true } } },
@@ -45,6 +51,12 @@ export default async function SettingsPage() {
   const teamsStatus = !teamsProblem
     ? "Enabled"
     : teamsConfig.enabled
+      ? "Incomplete"
+      : "Disabled";
+  const slackProblem = describeSlackConfigProblem(slackConfig);
+  const slackStatus = !slackProblem
+    ? "Enabled"
+    : slackConfig.enabled
       ? "Incomplete"
       : "Disabled";
   const canInvite = canManageWorkspaceMembers(session!.user.role);
@@ -197,18 +209,42 @@ export default async function SettingsPage() {
               </Link>
             </div>
           </li>
+          <li className="flex items-center justify-between gap-4 px-5 py-4">
+            <div>
+              <p className="text-[14px] font-medium text-ink">Slack</p>
+              <p className="mt-0.5 text-[12.5px] text-[color:var(--color-muted)]">
+                {slackProblem ??
+                  "Configure the app, bootstrap users by email, and send a proactive test message."}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`pill ${slackProblem ? "opacity-60" : ""}`}>
+                <span
+                  className={`pill-dot ${
+                    slackProblem ? "bg-[color:var(--color-muted)]" : ""
+                  }`}
+                />
+                {slackStatus}
+              </span>
+              <Link href="/settings/slack" className="btn btn-secondary">
+                Open
+              </Link>
+            </div>
+          </li>
           <li className="px-5 py-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[14px] font-medium text-ink">Slack</p>
+                <p className="text-[14px] font-medium text-ink">
+                  Slack setup notes
+                </p>
                 <p className="mt-0.5 text-[12.5px] text-[color:var(--color-muted)]">
-                  Coming soon. Slack will use a customer-owned Slack app with
-                  bot scopes, event subscriptions, and workspace install.
+                  Slack uses a customer-owned Slack app with bot scopes, event
+                  subscriptions, and workspace install.
                 </p>
               </div>
               <span className="pill opacity-60">
                 <span className="pill-dot bg-[color:var(--color-muted)]" />
-                Coming soon
+                Docs
               </span>
             </div>
             <div className="mt-4 rounded-xl border border-dashed border-[color:var(--color-line-strong)] bg-black/[0.015] px-4 py-3">

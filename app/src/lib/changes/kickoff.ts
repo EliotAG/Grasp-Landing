@@ -21,6 +21,14 @@ import { ChangeEnrollmentKickoffStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { sendSimMessage } from "@/lib/integrations/simulator";
 import {
+  SlackSendError,
+  sendSlackMessageByEmployee,
+} from "@/lib/slack/proactive";
+import {
+  describeSlackConfigProblem,
+  getOrganizationSlackConfig,
+} from "@/lib/slack/integration";
+import {
   TeamsSendError,
   sendTeamsMessageByReferenceId,
 } from "@/lib/teams/proactive";
@@ -305,16 +313,43 @@ async function sendOne(
   }
   const simDelivered = simResult.ok && !simResult.skipped;
 
+  const slackConfig = await getOrganizationSlackConfig(employee.organizationId);
+  const slackProblem = describeSlackConfigProblem(slackConfig);
+  let slackFailure: string | null = null;
+  if (!slackProblem) {
+    try {
+      await sendSlackMessageByEmployee(employee, body);
+      await prisma.changeEnrollment.update({
+        where: { id: enrollmentId },
+        data: {
+          kickoffStatus: ChangeEnrollmentKickoffStatus.sent,
+          kickoffSentAt: new Date(),
+          kickoffError: null,
+        },
+      });
+      return "sent";
+    } catch (err) {
+      slackFailure =
+        err instanceof SlackSendError || err instanceof Error
+          ? err.message
+          : "Unknown Slack send error";
+      console.error("[slack] kickoff send failed:", slackFailure);
+    }
+  }
+
   const teamsConfig = await getOrganizationTeamsConfig(employee.organizationId);
   const teamsProblem = describeTeamsConfigProblem(teamsConfig);
   if (teamsProblem) {
+    const problem = slackFailure
+      ? `Slack send failed: ${slackFailure}. Teams fallback unavailable: ${teamsProblem}`
+      : teamsProblem;
     await prisma.changeEnrollment.update({
       where: { id: enrollmentId },
       data: {
         kickoffStatus: ChangeEnrollmentKickoffStatus.skipped_no_bot,
         kickoffError: simDelivered
-          ? `Delivered via simulator. (${teamsProblem})`
-          : teamsProblem,
+          ? `Delivered via simulator. (${problem})`
+          : problem,
         kickoffSentAt: simDelivered ? new Date() : null,
       },
     });
@@ -344,8 +379,8 @@ async function sendOne(
         // landed somewhere visible, so don't alarm the leader. Without
         // the simulator we keep the production-style instruction.
         kickoffError: simDelivered
-          ? `Delivered via simulator. (${issue})`
-          : issue,
+          ? `Delivered via simulator. (${slackFailure ? `Slack send failed: ${slackFailure}. ` : ""}${issue})`
+          : `${slackFailure ? `Slack send failed: ${slackFailure}. ` : ""}${issue}`,
         // Stamp sent-at when at least the simulator delivered, so the
         // dashboard's "delivered" timestamp reflects when the DM
         // actually went out — not just the Teams channel.
@@ -379,8 +414,8 @@ async function sendOne(
         // as "failed" (Teams is the prod channel) but get a hint that
         // the test surface received it.
         kickoffError: simDelivered
-          ? `Teams send failed: ${message}. (Delivered via simulator for testing.)`
-          : message,
+          ? `${slackFailure ? `Slack send failed: ${slackFailure}. ` : ""}Teams send failed: ${message}. (Delivered via simulator for testing.)`
+          : `${slackFailure ? `Slack send failed: ${slackFailure}. ` : ""}${message}`,
       },
     });
     return "failed";

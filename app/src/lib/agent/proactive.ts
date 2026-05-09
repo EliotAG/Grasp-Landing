@@ -8,8 +8,8 @@
  * instead of the usual user-initiated turn. The system message is
  * persisted so the next user-initiated turn sees the same context.
  *
- * Delivery channels: tries Teams first (production path), mirrors to
- * the simulator (dev path). Marks the concerns `deliveredAt` only
+ * Delivery channels: tries Slack first, falls back to Teams, and mirrors
+ * to the simulator (dev path). Marks the concerns `deliveredAt` only
  * when at least one channel actually accepted the message.
  */
 
@@ -19,6 +19,14 @@ import { AgentMessageChannel, AgentMessageRole, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { DEFAULT_MODEL, getAnthropic, isAiEnabled } from "@/lib/ai/anthropic";
 import { sendSimMessage } from "@/lib/integrations/simulator";
+import {
+  SlackSendError,
+  sendSlackMessageByEmployee,
+} from "@/lib/slack/proactive";
+import {
+  describeSlackConfigProblem,
+  getOrganizationSlackConfig,
+} from "@/lib/slack/integration";
 import {
   TeamsSendError,
   sendTeamsMessageByReferenceId,
@@ -44,6 +52,7 @@ export interface ProactiveDeliveryResult {
   deliveredConcernIds: string[];
   /// Per-channel send outcomes for observability + UI.
   channels: {
+    slack: "sent" | "skipped_no_bot" | "failed" | "skipped";
     teams: "sent" | "skipped_no_bot" | "failed" | "skipped";
     simulator: "sent" | "skipped" | "failed";
   };
@@ -78,7 +87,7 @@ export async function deliverPendingResponses(
     return {
       ok: true,
       deliveredConcernIds: [],
-      channels: { teams: "skipped", simulator: "skipped" },
+      channels: { slack: "skipped", teams: "skipped", simulator: "skipped" },
       reply: "(No pending leadership responses — nothing to deliver.)",
     };
   }
@@ -121,7 +130,7 @@ function emptyFailure(reason: string): ProactiveDeliveryResult {
   return {
     ok: false,
     deliveredConcernIds: [],
-    channels: { teams: "skipped", simulator: "skipped" },
+    channels: { slack: "skipped", teams: "skipped", simulator: "skipped" },
     reply: "",
     error: reason,
   };
@@ -245,19 +254,40 @@ export interface ChannelSendResult {
 }
 
 /**
- * Send a reply over Teams (1:1, via stored ConversationReference)
- * and the dev simulator. Pure send — does not mutate any other
- * tables. Caller is responsible for whatever they want to mark
- * delivered (concern rows, scheduled check-in rows, etc).
+ * Send a reply over the configured production text channel and the
+ * dev simulator. Slack is preferred when configured because it can
+ * open first-contact DMs by email; Teams remains the fallback.
  */
 export async function sendReplyOnAllChannels(
   ctx: AgentContext,
   reply: string,
 ): Promise<ChannelSendResult> {
+  const slackConfig = await getOrganizationSlackConfig(ctx.employee.organizationId);
+  const slackProblem = describeSlackConfigProblem(slackConfig);
+  let slack: ProactiveDeliveryResult["channels"]["slack"] = slackProblem
+    ? "skipped"
+    : "skipped_no_bot";
+  let slackErr: string | null = null;
+  if (!slackProblem) {
+    try {
+      await sendSlackMessageByEmployee(ctx.employee, reply);
+      slack = "sent";
+    } catch (err) {
+      slack = "failed";
+      slackErr =
+        err instanceof SlackSendError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Slack send failed";
+      console.error("[proactive] slack send failed:", slackErr);
+    }
+  }
+
   const teamsConfig = await getOrganizationTeamsConfig(ctx.employee.organizationId);
   const teamsProblem = describeTeamsConfigProblem(teamsConfig);
   let ref: { id: string } | null = null;
-  if (!teamsProblem) {
+  if (slack !== "sent" && !teamsProblem) {
     ref = await resolveTeamsReferenceForEmployee(ctx.employee);
     if (!ref) {
       await ensureTeamsAppInstalledForEmployee(ctx.employee);
@@ -269,7 +299,9 @@ export async function sendReplyOnAllChannels(
     ? "skipped"
     : "skipped_no_bot";
   let teamsErr: string | null = null;
-  if (ref?.id) {
+  if (slack === "sent") {
+    teams = teamsProblem ? "skipped" : "skipped";
+  } else if (ref?.id) {
     try {
       await sendTeamsMessageByReferenceId(ref.id, reply);
       teams = "sent";
@@ -296,11 +328,13 @@ export async function sendReplyOnAllChannels(
   else if (sim.ok) simulator = "sent";
   else simulator = "failed";
 
-  const anyDelivered = teams === "sent" || simulator === "sent";
+  const anyDelivered =
+    slack === "sent" || teams === "sent" || simulator === "sent";
   return {
-    channels: { teams, simulator },
+    channels: { slack, teams, simulator },
     anyDelivered,
-    error: anyDelivered ? null : (teamsErr ?? "No channel accepted the message."),
+    error:
+      anyDelivered ? null : (slackErr ?? teamsErr ?? "No channel accepted the message."),
   };
 }
 

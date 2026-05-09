@@ -68,8 +68,10 @@ export async function verifySlackRequest(
     (candidate): candidate is OrganizationSlackConfig =>
       Boolean(candidate?.credentials),
   )) {
+    const credentials = config.credentials;
+    if (!credentials) continue;
     const expected = signSlackBody(
-      config.credentials.signingSecret,
+      credentials.signingSecret,
       timestamp,
       rawBody,
     );
