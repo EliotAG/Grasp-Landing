@@ -7,3 +7,4 @@ node_modules
 data/store.json
 *.tsbuildinfo
 next-env.d.ts
+.vercel
