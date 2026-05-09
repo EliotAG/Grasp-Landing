@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  jwks-rsa@4.0.1>jose: 5.10.0
+
 importers:
 
   .:
@@ -4499,7 +4502,7 @@ snapshots:
     dependencies:
       '@types/jsonwebtoken': 9.0.10
       debug: 4.4.3
-      jose: 6.2.2
+      jose: 5.10.0
       limiter: 1.1.5
       lru-memoizer: 3.0.0
     transitivePeerDependencies:
