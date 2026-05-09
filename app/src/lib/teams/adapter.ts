@@ -20,9 +20,7 @@ const globalForAdapter = globalThis as unknown as {
 export function getTeamsAdapter(): CloudAdapter {
   if (globalForAdapter.teamsAdapter) return globalForAdapter.teamsAdapter;
   const adapter = createTeamsAdapter(getTeamsAuthConfig());
-  if (process.env.NODE_ENV !== "production") {
-    globalForAdapter.teamsAdapter = adapter;
-  }
+  globalForAdapter.teamsAdapter = adapter;
   return adapter;
 }
 
@@ -36,9 +34,7 @@ export function getTeamsAdapterForAuthConfig(
   if (cached) return cached;
 
   const adapter = createTeamsAdapter(authConfig);
-  if (process.env.NODE_ENV !== "production") {
-    globalForAdapter.teamsAdaptersByAppId.set(key, adapter);
-  }
+  globalForAdapter.teamsAdaptersByAppId.set(key, adapter);
   return adapter;
 }
 

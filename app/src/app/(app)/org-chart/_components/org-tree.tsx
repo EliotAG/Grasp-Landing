@@ -214,7 +214,10 @@ export function OrgTreeWithControls({
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, k: 1 });
   const viewRef = useRef(view);
-  viewRef.current = view;
+
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
 
   const [isDragging, setIsDragging] = useState(false);
   // Suppress card position-transitions while we're actively dragging or

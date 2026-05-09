@@ -63,7 +63,18 @@ export function StakeholdersStep({
   // it). Critical for picking up the server-issued id on a new group's
   // SECOND save, which would otherwise upsert id:undefined again.
   const groupsRef = useRef<DraftGroup[]>(groups);
-  groupsRef.current = groups;
+
+  useEffect(() => {
+    groupsRef.current = groups;
+  }, [groups]);
+
+  function updateGroups(updater: (previous: DraftGroup[]) => DraftGroup[]) {
+    setGroups((previous) => {
+      const next = updater(previous);
+      groupsRef.current = next;
+      return next;
+    });
+  }
 
   const employeeIndex = useMemo(() => {
     const map = new Map<string, EmployeePick>();
@@ -88,7 +99,7 @@ export function StakeholdersStep({
   }, [onValidityChange, valid]);
 
   function addEmpty() {
-    setGroups((prev) => [
+    updateGroups((prev) => [
       ...prev,
       {
         name: "",
@@ -118,7 +129,7 @@ export function StakeholdersStep({
     const current = groupsRef.current.find((g) => g.key === key);
     if (!current) return;
     const merged = { ...current, ...patch };
-    setGroups((prev) =>
+    updateGroups((prev) =>
       prev.map((g) => (g.key === key ? { ...g, ...patch } : g)),
     );
     // Don't bother queuing a save until the group has a name — the
@@ -151,7 +162,7 @@ export function StakeholdersStep({
           return;
         }
         if (!latest.id) {
-          setGroups((prev) =>
+          updateGroups((prev) =>
             prev.map((g) =>
               g.key === merged.key ? { ...g, id: result.groupId } : g,
             ),
@@ -171,7 +182,7 @@ export function StakeholdersStep({
     if (inFlight) await inFlight.catch(() => {});
     saveChainRef.current.delete(group.key);
     if (group.id) await deleteStakeholderGroup(plan.id, group.id);
-    setGroups((prev) => prev.filter((g) => g.key !== group.key));
+    updateGroups((prev) => prev.filter((g) => g.key !== group.key));
   }
 
   function runAi() {
@@ -193,7 +204,7 @@ export function StakeholdersStep({
         key: `ai-${Date.now()}-${i}`,
       }));
       // Append rather than replace so existing edits survive.
-      setGroups((prev) => [...prev, ...newDrafts]);
+      updateGroups((prev) => [...prev, ...newDrafts]);
       // Persist AI suggestions immediately. Without this the groups only
       // live in client state, so a user who accepts the suggestions as-is
       // and clicks Continue arrives with zero groups in the database.

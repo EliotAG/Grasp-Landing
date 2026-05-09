@@ -3,6 +3,7 @@
 import {
   type ClipboardEvent,
   type KeyboardEvent,
+  useCallback,
   useEffect,
   useId,
   useRef,
@@ -36,6 +37,16 @@ export function OtpInput({
     if (autoFocus) inputs.current[0]?.focus();
   }, [autoFocus]);
 
+  const syncHiddenInput = useCallback(() => {
+    const visibleValue = inputs.current
+      .slice(0, length)
+      .map((el) => el?.value.replace(/\D/g, "").slice(0, 1) ?? "")
+      .join("");
+    const value = visibleValue || digitsRef.current.join("");
+    if (tokenInput.current) tokenInput.current.value = value;
+    return value;
+  }, [length]);
+
   useEffect(() => {
     const input = tokenInput.current;
     const form = input?.form;
@@ -52,17 +63,7 @@ export function OtpInput({
       form.removeEventListener("submit", syncBeforeSubmit);
       form.removeEventListener("formdata", syncFormData);
     };
-  }, [name]);
-
-  const syncHiddenInput = () => {
-    const visibleValue = inputs.current
-      .slice(0, length)
-      .map((el) => el?.value.replace(/\D/g, "").slice(0, 1) ?? "")
-      .join("");
-    const value = visibleValue || digitsRef.current.join("");
-    if (tokenInput.current) tokenInput.current.value = value;
-    return value;
-  };
+  }, [name, syncHiddenInput]);
 
   const commitDigits = (next: string[]) => {
     digitsRef.current = next;

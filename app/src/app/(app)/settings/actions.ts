@@ -7,6 +7,10 @@ import {
   WorkspacePendingApprovalError,
   assertOrgApproved,
 } from "@/lib/access";
+import {
+  getAppBaseUrlFromHeaders,
+  getConfiguredAppBaseUrl,
+} from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { parseOrganizationTextChannel } from "@/lib/channels";
 import { prisma } from "@/lib/db";
@@ -102,12 +106,8 @@ export async function inviteMemberAction(
 }
 
 async function getBaseUrl() {
-  const configuredUrl =
-    process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL;
-  if (configuredUrl) return configuredUrl.replace(/\/$/, "");
+  const configuredUrl = getConfiguredAppBaseUrl();
+  if (configuredUrl) return configuredUrl;
 
-  const hdrs = await headers();
-  const proto = hdrs.get("x-forwarded-proto") ?? "http";
-  const host = hdrs.get("host") ?? "localhost:3000";
-  return `${proto}://${host}`;
+  return getAppBaseUrlFromHeaders(await headers());
 }

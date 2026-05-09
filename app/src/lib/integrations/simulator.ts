@@ -15,6 +15,8 @@
  * Grasp's primary Teams flow.
  */
 
+import { constantTimeEqual } from "@/lib/crypto/constant-time";
+
 export interface SimSendInput {
   email: string;
   name: string;
@@ -85,10 +87,5 @@ export function verifySimulatorWebhook(req: Request): boolean {
   const header = req.headers.get("authorization") ?? "";
   if (!header.startsWith("Bearer ")) return false;
   const token = header.slice("Bearer ".length).trim();
-  if (token.length !== expected.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < token.length; i++) {
-    mismatch |= token.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return mismatch === 0;
+  return constantTimeEqual(token, expected);
 }

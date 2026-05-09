@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { aiScoreAnnouncement, saveAnnouncement } from "../actions";
 import { useAutosave } from "../_state/use-autosave";
 import { StepNav } from "./step-nav";
@@ -66,16 +66,13 @@ export function AnnouncementStep({
   const [scoreError, setScoreError] = useState<string | null>(null);
   // The scoring snapshot belongs to whatever the announcement said when we
   // ran it. Local edits invalidate the displayed scores until re-scored.
-  const [scoresStale, setScoresStale] = useState(false);
+  const [lastScoredText, setLastScoredText] = useState(plan.announcement ?? "");
+  const scoresStale = scores ? text !== lastScoredText : false;
 
   const { queue, flushNow } = useAutosave(
     (payload: { announcement: string }) =>
       saveAnnouncement(plan.id, payload),
   );
-
-  useEffect(() => {
-    if (text !== (plan.announcement ?? "")) setScoresStale(true);
-  }, [text, plan.announcement]);
 
   async function streamDraft() {
     setStreamError(null);
@@ -96,10 +93,11 @@ export function AnnouncementStep({
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
       let buf = "";
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
+      let streamDone = false;
+      while (!streamDone) {
         const { done, value } = await reader.read();
-        if (done) break;
+        streamDone = done;
+        if (!value) continue;
         buf += decoder.decode(value, { stream: true });
         setText(buf);
       }
@@ -124,7 +122,7 @@ export function AnnouncementStep({
         return;
       }
       setScores(result.scores);
-      setScoresStale(false);
+      setLastScoredText(text);
     });
   }
 

@@ -55,11 +55,14 @@ export function AppShell({
   const navItems = showAdminNav ? [...NAV, ADMIN_NAV_ITEM] : NAV;
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === "1") setCollapsed(true);
-    } catch {}
-    setHydrated(true);
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const stored = window.localStorage.getItem(STORAGE_KEY);
+        if (stored === "1") setCollapsed(true);
+      } catch {}
+      setHydrated(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {

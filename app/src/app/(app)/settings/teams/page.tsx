@@ -121,7 +121,7 @@ export default async function TeamsSettingsPage() {
             Microsoft Teams
           </h1>
           <p className="mt-3 max-w-[640px] text-[15px] leading-[1.65] text-[color:var(--color-muted)]">
-            Configure this workspace's customer-owned Teams bot, verify Graph
+            Configure this workspace&rsquo;s customer-owned Teams bot, verify Graph
             bootstrap, captured conversations, and proactive DMs before using
             Teams in a live rollout.
           </p>

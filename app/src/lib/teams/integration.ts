@@ -2,6 +2,7 @@ import type { OrganizationTeamsIntegration } from "@prisma/client";
 
 import { decryptSecret, encryptSecret } from "@/lib/crypto/secrets";
 import { prisma } from "@/lib/db";
+import { trimOrNull } from "@/lib/utils";
 
 export interface TeamsCredentials {
   appId: string;
@@ -32,24 +33,19 @@ export interface SaveOrganizationTeamsConfigInput {
   serviceUrl?: string;
 }
 
-function clean(value: FormDataEntryValue | string | null | undefined): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 function envConfig(organizationId: string | null): OrganizationTeamsConfig {
-  const appId = clean(process.env.MicrosoftAppId);
-  const appPassword = clean(process.env.MicrosoftAppPassword);
-  const tenantId = clean(process.env.MicrosoftAppTenantId);
+  const appId = trimOrNull(process.env.MicrosoftAppId);
+  const appPassword = trimOrNull(process.env.MicrosoftAppPassword);
+  const tenantId = trimOrNull(process.env.MicrosoftAppTenantId);
   const missing: string[] = [];
   if (!appId) missing.push("MicrosoftAppId");
   if (!appPassword) missing.push("MicrosoftAppPassword");
   if (!tenantId) missing.push("MicrosoftAppTenantId");
 
   const manifestId =
-    clean(process.env.TEAMS_APP_MANIFEST_ID) ?? clean(process.env.MicrosoftAppId);
-  const catalogId = clean(process.env.TEAMS_APP_CATALOG_ID);
+    trimOrNull(process.env.TEAMS_APP_MANIFEST_ID) ??
+    trimOrNull(process.env.MicrosoftAppId);
+  const catalogId = trimOrNull(process.env.TEAMS_APP_CATALOG_ID);
   if (!manifestId && !catalogId) {
     missing.push("TEAMS_APP_MANIFEST_ID or TEAMS_APP_CATALOG_ID");
   }
@@ -72,11 +68,11 @@ function envConfig(organizationId: string | null): OrganizationTeamsConfig {
 
 function fromRow(row: OrganizationTeamsIntegration): OrganizationTeamsConfig {
   const missing: string[] = [];
-  const appId = clean(row.microsoftAppId);
-  const tenantId = clean(row.microsoftTenantId);
-  const encrypted = clean(row.microsoftAppPasswordEncrypted);
-  const catalogId = clean(row.teamsAppCatalogId);
-  const manifestId = clean(row.teamsAppManifestId);
+  const appId = trimOrNull(row.microsoftAppId);
+  const tenantId = trimOrNull(row.microsoftTenantId);
+  const encrypted = trimOrNull(row.microsoftAppPasswordEncrypted);
+  const catalogId = trimOrNull(row.teamsAppCatalogId);
+  const manifestId = trimOrNull(row.teamsAppManifestId);
 
   if (!appId) missing.push("Microsoft app id");
   if (!tenantId) missing.push("Microsoft tenant id");
@@ -104,7 +100,7 @@ function fromRow(row: OrganizationTeamsIntegration): OrganizationTeamsConfig {
         : null,
     teamsAppCatalogId: catalogId,
     teamsAppManifestId: manifestId,
-    serviceUrl: clean(row.serviceUrl),
+    serviceUrl: trimOrNull(row.serviceUrl),
     missing,
     row,
   };
@@ -149,16 +145,16 @@ export function getEnvTeamsConfig(): OrganizationTeamsConfig {
 export async function saveOrganizationTeamsConfig(
   input: SaveOrganizationTeamsConfigInput,
 ): Promise<OrganizationTeamsIntegration> {
-  const secret = clean(input.microsoftAppPassword);
+  const secret = trimOrNull(input.microsoftAppPassword);
   const encrypted = secret ? encryptSecret(secret) : undefined;
 
   const data = {
     enabled: input.enabled,
-    microsoftTenantId: clean(input.microsoftTenantId),
-    microsoftAppId: clean(input.microsoftAppId),
-    teamsAppCatalogId: clean(input.teamsAppCatalogId),
-    teamsAppManifestId: clean(input.teamsAppManifestId),
-    serviceUrl: clean(input.serviceUrl),
+    microsoftTenantId: trimOrNull(input.microsoftTenantId),
+    microsoftAppId: trimOrNull(input.microsoftAppId),
+    teamsAppCatalogId: trimOrNull(input.teamsAppCatalogId),
+    teamsAppManifestId: trimOrNull(input.teamsAppManifestId),
+    serviceUrl: trimOrNull(input.serviceUrl),
     lastCheckError: null,
     ...(encrypted ? { microsoftAppPasswordEncrypted: encrypted } : {}),
   };

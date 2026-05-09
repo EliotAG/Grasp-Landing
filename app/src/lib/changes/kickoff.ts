@@ -18,6 +18,11 @@
 
 import { ChangeEnrollmentKickoffStatus } from "@prisma/client";
 
+import {
+  absoluteAppUrl,
+  getConfiguredAppBaseUrl,
+  getLocalAppBaseUrl,
+} from "@/lib/app-url";
 import { getOrganizationPrimaryTextChannel } from "@/lib/channels";
 import { prisma } from "@/lib/db";
 import { sendSimMessage } from "@/lib/integrations/simulator";
@@ -52,13 +57,7 @@ const KICKOFF_BATCH_SIZE = 8;
  *   otherwise PORT lets the survey link follow the active dev server.
  */
 function appBaseUrl(): string {
-  const url =
-    process.env.AUTH_URL?.trim() ||
-    process.env.NEXTAUTH_URL?.trim() ||
-    process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (url) return url.replace(/\/$/, "");
-  const port = process.env.PORT?.trim() || "3001";
-  return `http://localhost:${port}`;
+  return getConfiguredAppBaseUrl() ?? getLocalAppBaseUrl("3001");
 }
 
 function formatVoiceSlot(date: Date): string {
@@ -448,7 +447,7 @@ async function sendOne(
 }
 
 function renderKickoffDm(ctx: DmContext): string {
-  const surveyUrl = `${appBaseUrl()}/s/${ctx.surveyToken}`;
+  const surveyUrl = absoluteAppUrl(appBaseUrl(), `/s/${ctx.surveyToken}`);
   const announcement = (ctx.announcement ?? "").trim();
   const cadenceLine = ctx.responseCadenceHours
     ? `Leadership has committed to responding to questions or concerns within ${ctx.responseCadenceHours} hours. I'll make sure your input reaches them.`

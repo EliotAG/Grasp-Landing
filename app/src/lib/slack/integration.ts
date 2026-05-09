@@ -2,6 +2,7 @@ import type { OrganizationSlackIntegration } from "@prisma/client";
 
 import { decryptSecret, encryptSecret } from "@/lib/crypto/secrets";
 import { prisma } from "@/lib/db";
+import { trimOrNull } from "@/lib/utils";
 
 export interface SlackCredentials {
   botToken: string;
@@ -32,19 +33,13 @@ export interface SaveOrganizationSlackConfigInput {
   slackSigningSecret?: string;
 }
 
-function clean(value: FormDataEntryValue | string | null | undefined): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 function envConfig(organizationId: string | null): OrganizationSlackConfig {
-  const teamId = clean(process.env.SLACK_TEAM_ID);
-  const teamName = clean(process.env.SLACK_TEAM_NAME);
-  const appId = clean(process.env.SLACK_APP_ID);
-  const botUserId = clean(process.env.SLACK_BOT_USER_ID);
-  const botToken = clean(process.env.SLACK_BOT_TOKEN);
-  const signingSecret = clean(process.env.SLACK_SIGNING_SECRET);
+  const teamId = trimOrNull(process.env.SLACK_TEAM_ID);
+  const teamName = trimOrNull(process.env.SLACK_TEAM_NAME);
+  const appId = trimOrNull(process.env.SLACK_APP_ID);
+  const botUserId = trimOrNull(process.env.SLACK_BOT_USER_ID);
+  const botToken = trimOrNull(process.env.SLACK_BOT_TOKEN);
+  const signingSecret = trimOrNull(process.env.SLACK_SIGNING_SECRET);
   const missing: string[] = [];
   if (!teamId) missing.push("SLACK_TEAM_ID");
   if (!botToken) missing.push("SLACK_BOT_TOKEN");
@@ -68,9 +63,9 @@ function envConfig(organizationId: string | null): OrganizationSlackConfig {
 
 function fromRow(row: OrganizationSlackIntegration): OrganizationSlackConfig {
   const missing: string[] = [];
-  const teamId = clean(row.slackTeamId);
-  const encryptedBotToken = clean(row.slackBotTokenEncrypted);
-  const encryptedSigningSecret = clean(row.slackSigningSecretEncrypted);
+  const teamId = trimOrNull(row.slackTeamId);
+  const encryptedBotToken = trimOrNull(row.slackBotTokenEncrypted);
+  const encryptedSigningSecret = trimOrNull(row.slackSigningSecretEncrypted);
 
   if (!teamId) missing.push("Slack team id");
   if (!encryptedBotToken) missing.push("Slack bot token");
@@ -101,9 +96,9 @@ function fromRow(row: OrganizationSlackIntegration): OrganizationSlackConfig {
       row.enabled && teamId && botToken && signingSecret
         ? { teamId, botToken, signingSecret }
         : null,
-    teamName: clean(row.slackTeamName),
-    appId: clean(row.slackAppId),
-    botUserId: clean(row.slackBotUserId),
+    teamName: trimOrNull(row.slackTeamName),
+    appId: trimOrNull(row.slackAppId),
+    botUserId: trimOrNull(row.slackBotUserId),
     missing,
     row,
   };
@@ -156,15 +151,15 @@ export async function getEnabledSlackConfigs(): Promise<OrganizationSlackConfig[
 export async function saveOrganizationSlackConfig(
   input: SaveOrganizationSlackConfigInput,
 ): Promise<OrganizationSlackIntegration> {
-  const botToken = clean(input.slackBotToken);
-  const signingSecret = clean(input.slackSigningSecret);
+  const botToken = trimOrNull(input.slackBotToken);
+  const signingSecret = trimOrNull(input.slackSigningSecret);
 
   const data = {
     enabled: input.enabled,
-    slackTeamId: clean(input.slackTeamId),
-    slackTeamName: clean(input.slackTeamName),
-    slackAppId: clean(input.slackAppId),
-    slackBotUserId: clean(input.slackBotUserId),
+    slackTeamId: trimOrNull(input.slackTeamId),
+    slackTeamName: trimOrNull(input.slackTeamName),
+    slackAppId: trimOrNull(input.slackAppId),
+    slackBotUserId: trimOrNull(input.slackBotUserId),
     lastCheckError: null,
     ...(botToken ? { slackBotTokenEncrypted: encryptSecret(botToken) } : {}),
     ...(signingSecret

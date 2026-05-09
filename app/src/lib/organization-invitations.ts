@@ -87,13 +87,22 @@ export async function inviteOrganizationMember({
     select: { email: true },
   });
 
-  await sendInviteEmail({
-    to: invitation.email,
-    organizationName: organization.name,
-    inviterName: inviter?.name ?? inviter?.email ?? "A workspace admin",
-    role,
-    signInUrl: `${baseUrl}/sign-in`,
-  });
+  try {
+    await sendInviteEmail({
+      to: invitation.email,
+      organizationName: organization.name,
+      inviterName: inviter?.name ?? inviter?.email ?? "A workspace admin",
+      role,
+      signInUrl: `${baseUrl}/sign-in`,
+    });
+  } catch (err) {
+    return {
+      ok: false as const,
+      error: `Invite saved, but email could not be sent: ${
+        err instanceof Error ? err.message : "Unknown email error"
+      }`,
+    };
+  }
 
   return {
     ok: true as const,
@@ -129,7 +138,7 @@ async function sendInviteEmail({
     <div style="font-family:Georgia,serif;font-size:24px;font-weight:300;letter-spacing:-0.02em;margin-bottom:8px">grasp</div>
     <h1 style="font-family:Georgia,serif;font-size:28px;font-weight:300;letter-spacing:-0.02em;margin:24px 0 12px">You have been invited to ${escapeHtml(organizationName)}</h1>
     <p style="color:#595959;line-height:1.6;margin:0 0 20px">${escapeHtml(inviterName)} invited you as ${roleLabel}. Sign in with <strong>${escapeHtml(to)}</strong> and Grasp will add you to the workspace.</p>
-    <a href="${signInUrl}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:600;font-size:14px">Sign in to Grasp</a>
+    <a href="${escapeHtml(signInUrl)}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:600;font-size:14px">Sign in to Grasp</a>
     <p style="color:#888;font-size:13px;line-height:1.6;margin:28px 0 0">If you were not expecting this invite, you can ignore this email.</p>
   </div>
 </body></html>`;
@@ -156,10 +165,15 @@ async function sendInviteEmail({
     return;
   }
 
-  console.log("\n────────────────────────────────────────────");
-  console.log(`Workspace invite for ${to}:`);
-  console.log(text);
-  console.log("────────────────────────────────────────────\n");
+  if (process.env.NODE_ENV !== "production") {
+    console.log("\n────────────────────────────────────────────");
+    console.log(`Workspace invite for ${to}:`);
+    console.log(text);
+    console.log("────────────────────────────────────────────\n");
+    return;
+  }
+
+  throw new Error("Email delivery is not configured.");
 }
 
 function escapeHtml(value: string) {

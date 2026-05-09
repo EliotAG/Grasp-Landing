@@ -1,3 +1,5 @@
+import { constantTimeEqual } from "./constant-time";
+
 export const SIMULATOR_ADMIN_COOKIE = "grasp_sim_admin";
 
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
@@ -44,15 +46,6 @@ async function hmac(data: string, secret: string) {
     new TextEncoder().encode(data),
   );
   return bytesToBase64url(new Uint8Array(signature));
-}
-
-function constantTimeEqual(a: string, b: string) {
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) {
-    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return mismatch === 0;
 }
 
 async function verifySignedToken(token: string): Promise<SignedPayload | null> {

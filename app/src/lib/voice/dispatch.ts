@@ -15,6 +15,7 @@
 
 import { VoiceCallStatus } from "@prisma/client";
 
+import { absoluteAppUrl, getConfiguredAppBaseUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/db";
 import { loadAgentContextByEmail } from "@/lib/agent/context";
 import { buildVoiceSystemPrompt } from "@/lib/agent/voice-prompt";
@@ -36,16 +37,13 @@ export interface VoiceDispatchResult {
 function recallWebhookUrl(): string {
   const explicit = process.env.RECALL_WEBHOOK_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, "");
-  const base =
-    process.env.AUTH_URL?.trim() ||
-    process.env.NEXTAUTH_URL?.trim() ||
-    process.env.NEXT_PUBLIC_APP_URL?.trim();
+  const base = getConfiguredAppBaseUrl();
   if (!base) {
     throw new Error(
       "RECALL_WEBHOOK_URL is not configured and no fallback app base URL is set",
     );
   }
-  return `${base.replace(/\/$/, "")}/api/calls/recall-webhook`;
+  return absoluteAppUrl(base, "/api/calls/recall-webhook");
 }
 
 export async function drainDueVoiceCalls(opts?: {

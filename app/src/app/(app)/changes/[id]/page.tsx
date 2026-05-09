@@ -397,7 +397,7 @@ export default async function ChangePlanDetail({
       ) : null}
 
       {plan.status === "active" ? (
-        <CadenceSection checkIns={checkIns} />
+        <CadenceSection checkIns={checkIns} nowMs={currentTimeMs()} />
       ) : null}
 
       {plan.status === "active" ? (
@@ -1142,7 +1142,17 @@ const CHECK_IN_KIND_LABEL: Record<string, string> = {
  * timestamp if not, and a count of failures the leader should
  * dig into.
  */
-function CadenceSection({ checkIns }: { checkIns: CheckInSummary[] }) {
+function currentTimeMs() {
+  return Date.now();
+}
+
+function CadenceSection({
+  checkIns,
+  nowMs,
+}: {
+  checkIns: CheckInSummary[];
+  nowMs: number;
+}) {
   if (checkIns.length === 0) {
     // Activated before this slice landed, OR enrollment count is 0.
     // The header explains either way; no need for a separate empty
@@ -1164,15 +1174,14 @@ function CadenceSection({ checkIns }: { checkIns: CheckInSummary[] }) {
     );
   }
 
-  const now = Date.now();
   const buckets = CHECK_IN_KIND_ORDER.map((kind) => {
     const rows = checkIns.filter((c) => c.kind === kind);
     const dispatched = rows.filter((r) => r.status === "dispatched").length;
     const failed = rows.filter((r) => r.status === "failed").length;
     const skipped = rows.filter((r) => r.status === "skipped").length;
     const scheduled = rows.filter((r) => r.status === "scheduled");
-    const due = scheduled.filter((r) => r.scheduledFor.getTime() <= now);
-    const upcoming = scheduled.filter((r) => r.scheduledFor.getTime() > now);
+    const due = scheduled.filter((r) => r.scheduledFor.getTime() <= nowMs);
+    const upcoming = scheduled.filter((r) => r.scheduledFor.getTime() > nowMs);
     const nextDue = upcoming.sort(
       (a, b) => a.scheduledFor.getTime() - b.scheduledFor.getTime(),
     )[0];
