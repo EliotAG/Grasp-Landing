@@ -1,0 +1,1086 @@
+// Prisma schema for the Grasp web app skeleton.
+//
+// Three logical layers:
+//   1. Auth.js tables   - users / accounts / sessions / verificationTokens
+//   2. Tenancy          - organizations (one per pilot company) + memberships
+//   3. Domain           - employees (org chart), changePlans, stakeholderGroups
+//
+// The change-plan object is the load-bearing artifact in the spec: the
+// planning wizard produces it and the conversational agent executes
+// against it. Field set follows Spec.MD §"Step 1: Leadership opens the
+// planning wizard" so the wizard has a target schema to write into.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------
+// Auth.js (NextAuth v5) tables — required shape per @auth/prisma-adapter.
+// `@@map` keeps lowercase singular table names so they match the docs.
+// -----------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  accounts     Account[]
+  sessions     Session[]
+  memberships  Membership[]
+  sentOrganizationInvitations OrganizationInvitation[] @relation("OrganizationInvitationInvitedBy")
+  acceptedOrganizationInvitations OrganizationInvitation[] @relation("OrganizationInvitationAcceptedBy")
+  changePlans  ChangePlan[]
+  activatedChangePlans ChangePlan[] @relation("ChangePlanActivatedBy")
+  respondedConcerns Concern[] @relation("ConcernRespondedBy")
+  authoredAmendments ChangeAmendment[] @relation("AmendmentAuthoredBy")
+
+  @@map("user")
+}
+
+model Account {
+  userId            String  @map("userId")
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("account")
+}
+
+model Session {
+  sessionToken String   @id @map("sessionToken")
+  userId       String   @map("userId")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verificationToken")
+}
+
+// -----------------------------------------------------------------------
+// Tenancy: one organization per pilot company.
+// -----------------------------------------------------------------------
+
+enum MembershipRole {
+  owner
+  admin
+  member
+
+  @@map("membership_role")
+}
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  /// URL-safe identifier, e.g. "unifiedcommunications"
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt        @map("updated_at")
+
+  /// Closed-pilot gate.
+  ///
+  /// Anyone can sign up and create a workspace, but until a Grasp
+  /// operator flips this to a non-null timestamp, members of this
+  /// org cannot activate a rollout, publish a change amendment, or
+  /// configure the Teams/Slack integration. Set via the
+  /// `scripts/approve-org.ts` operational helper, by hand in psql, or
+  /// from a future admin UI. Null = pending approval; the timestamp
+  /// is the moment access was granted (kept for audit).
+  approvedAt DateTime? @map("approved_at")
+
+  memberships  Membership[]
+  invitations  OrganizationInvitation[]
+  employees    Employee[]
+  changePlans  ChangePlan[]
+  teamsIntegration OrganizationTeamsIntegration?
+
+  @@map("organization")
+}
+
+model OrganizationTeamsIntegration {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @unique @map("organization_id") @db.Uuid
+
+  /// Tenant-owned Teams integration switch. Disabled rows intentionally
+  /// suppress the global env fallback for this organization.
+  enabled Boolean @default(false)
+
+  microsoftTenantId           String? @map("microsoft_tenant_id")
+  microsoftAppId              String? @map("microsoft_app_id")
+  microsoftAppPasswordEncrypted String? @map("microsoft_app_password_encrypted")
+  teamsAppCatalogId           String? @map("teams_app_catalog_id")
+  teamsAppManifestId          String? @map("teams_app_manifest_id")
+  serviceUrl                  String? @map("service_url")
+
+  lastCheckedAt  DateTime? @map("last_checked_at")
+  lastCheckError String?   @map("last_check_error")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([microsoftAppId])
+  @@index([microsoftTenantId])
+  @@map("organization_teams_integration")
+}
+
+model Membership {
+  userId         String         @map("user_id")
+  organizationId String         @map("organization_id") @db.Uuid
+  role           MembershipRole @default(member)
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, organizationId])
+  @@map("membership")
+}
+
+model OrganizationInvitation {
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  email          String
+  role           MembershipRole @default(admin)
+  invitedByUserId String        @map("invited_by_user_id")
+  acceptedByUserId String?      @map("accepted_by_user_id")
+  acceptedAt     DateTime?      @map("accepted_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation("OrganizationInvitationInvitedBy", fields: [invitedByUserId], references: [id])
+  acceptedBy   User?        @relation("OrganizationInvitationAcceptedBy", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, email])
+  @@index([email])
+  @@index([acceptedAt])
+  @@map("organization_invitation")
+}
+
+// -----------------------------------------------------------------------
+// Org chart.
+//
+// Manual CSV upload in v1 per spec ("Post-MLP this becomes SSO-based
+// auto-sync"). Self-referential manager relation models the reporting tree.
+// -----------------------------------------------------------------------
+
+model Employee {
+  id                String   @id @default(uuid()) @db.Uuid
+  organizationId    String   @map("organization_id") @db.Uuid
+  name              String
+  email             String
+  title             String?
+  team              String?
+  /// Microsoft Entra user id resolved from Graph. Lets Teams bootstrap
+  /// address users even when Teams omits email from bot activities.
+  microsoftAadObjectId        String?   @map("microsoft_aad_object_id")
+  microsoftUserPrincipalName  String?   @map("microsoft_user_principal_name")
+  teamsAppInstallationId      String?   @map("teams_app_installation_id")
+  teamsAppInstalledAt         DateTime? @map("teams_app_installed_at")
+  teamsBootstrapCheckedAt     DateTime? @map("teams_bootstrap_checked_at")
+  teamsBootstrapError         String?   @map("teams_bootstrap_error")
+  /// Self-reference; nullable for top-of-tree (CEO, etc).
+  managerEmployeeId String?  @map("manager_employee_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt        @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  manager      Employee?    @relation("Reports", fields: [managerEmployeeId], references: [id], onDelete: SetNull)
+  reports      Employee[]   @relation("Reports")
+
+  stakeholderMemberships StakeholderGroupMember[]
+  changeEnrollments      ChangeEnrollment[]
+  teamsConversationReferences TeamsConversationReference[]
+
+  @@unique([organizationId, email])
+  @@unique([organizationId, microsoftAadObjectId])
+  @@index([microsoftAadObjectId])
+  @@map("employee")
+}
+
+// -----------------------------------------------------------------------
+// Change plans.
+//
+// The change-plan object is the contract between the web app (where
+// leadership crafts it) and the conversational agent (which executes
+// against it). Field set follows Spec.MD "Step 1: Leadership opens the
+// planning wizard" verbatim so the wizard has a target schema.
+// -----------------------------------------------------------------------
+
+enum ChangePlanStatus {
+  draft
+  ready
+  active
+  completed
+  archived
+
+  @@map("change_plan_status")
+}
+
+/// Slug of the wizard step the leader is currently on. Persisted on
+/// ChangePlan so resuming a draft jumps straight to the right page.
+enum ChangePlanWizardStep {
+  change
+  audience
+  support
+  approve
+
+  @@map("change_plan_wizard_step")
+}
+
+enum TrainingDocumentStatus {
+  pending
+  parsed
+  failed
+
+  @@map("training_document_status")
+}
+
+enum TrainingDocumentIndexStatus {
+  /// Parsed text on file, but no chunks yet (queued for indexing).
+  pending
+  /// Chunks (and optionally embeddings) persisted, agent can search.
+  indexed
+  /// Indexing pipeline crashed; human can retry from the UI.
+  failed
+
+  @@map("training_document_index_status")
+}
+
+model ChangePlan {
+  id              String           @id @default(uuid()) @db.Uuid
+  organizationId  String           @map("organization_id") @db.Uuid
+  createdByUserId String           @map("created_by_user_id")
+
+  /// Short human label, e.g. "Salesforce CRM rollout".
+  name            String
+  /// Plain-language summary of what is changing.
+  summary         String?
+
+  status          ChangePlanStatus @default(draft)
+  kickoffDate     DateTime?        @map("kickoff_date") @db.Date
+  targetDate      DateTime?        @map("target_date")  @db.Date
+
+  /// CFIR core-vs-adaptable-periphery applied to a single rollout: what
+  /// about this change cannot be lost in telephone.
+  coreMechanism   String?          @map("core_mechanism")
+
+  /// Hours leadership commits to responding to surfaced concerns within.
+  responseCadenceHours Int?        @map("response_cadence_hours")
+
+  /// Drafted announcement text; agent delivers this at kickoff.
+  announcement              String?
+  /// Whether leadership sends the announcement directly or via the agent.
+  announcementSendOnBehalf  Boolean @default(false) @map("announcement_send_on_behalf")
+  /// Last scoring pass output: { deciRyan, bridges, lossAversion } each with
+  /// gaps[] and a suggested revision. Recomputed on demand from the wizard.
+  announcementScores        Json?   @map("announcement_scores")
+
+  /// Wizard state. Persisted so a leader can leave mid-flow and resume
+  /// at exactly the step they left off on. Each step's data is saved
+  /// continuously via per-field server actions; this slug just routes.
+  currentStep        ChangePlanWizardStep @default(change) @map("current_step")
+  /// Distinct from updatedAt: powers the "Saved at HH:MM" indicator.
+  /// updatedAt fires for every Prisma write (including system writes);
+  /// lastSavedAt only fires for user-initiated saves from the wizard.
+  lastSavedAt        DateTime?            @map("last_saved_at")
+  /// Set when the leader approves the announcement on the approval step.
+  /// Transition: status draft -> ready, wizardCompletedAt = now().
+  wizardCompletedAt  DateTime?            @map("wizard_completed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  /// Set when leadership clicks Activate on a `ready` plan, transitioning
+  /// it to `active` and fanning out kickoff DMs. Distinct from
+  /// `wizardCompletedAt` (which only marks the wizard as finished).
+  activatedAt        DateTime? @map("activated_at")
+  activatedByUserId  String?   @map("activated_by_user_id")
+
+  /// Voice kickoff opt-in. When true, activation calls Microsoft Graph
+  /// per enrollment to (1) create a unique online Teams meeting on the
+  /// activator's calendar and (2) send a real Outlook calendar invite
+  /// to the employee with the join URL embedded. Off by default; needs
+  /// Graph application permissions (OnlineMeetings.ReadWrite.All +
+  /// Calendars.ReadWrite) and an Application Access Policy granting
+  /// the bot's app id permission to act on behalf of the organizer.
+  voiceKickoffEnabled    Boolean @default(false) @map("voice_kickoff_enabled")
+  /// Minutes after activatedAt for the first call. Default 24hr.
+  voiceKickoffStartOffsetMinutes Int @default(1440) @map("voice_kickoff_start_offset_minutes")
+  /// Minutes between each employee's call. Default 30min.
+  voiceKickoffStaggerMinutes Int @default(30) @map("voice_kickoff_stagger_minutes")
+  /// Length of each call slot in minutes. Default 15min.
+  voiceKickoffDurationMinutes Int @default(15) @map("voice_kickoff_duration_minutes")
+
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy         User               @relation(fields: [createdByUserId], references: [id])
+  activatedBy       User?              @relation("ChangePlanActivatedBy", fields: [activatedByUserId], references: [id])
+  stakeholderGroups StakeholderGroup[]
+  trainingDocuments TrainingDocument[]
+  checkInTemplates   RolloutCheckInTemplate[]
+  enrollments       ChangeEnrollment[]
+  amendments        ChangeAmendment[]
+  scheduledVoiceCalls ScheduledVoiceCall[]
+
+  @@map("change_plan")
+}
+
+// -----------------------------------------------------------------------
+// Stakeholder groups.
+//
+// "The wizard does not collect a flat list of affected employees. It
+// forces leadership to identify distinct stakeholder groups, label them,
+// and specify how each is affected and why." Each group has its own
+// behaviorSpec (Atkins et al. who-does-what-when-where-how-often).
+// -----------------------------------------------------------------------
+
+model StakeholderGroup {
+  id           String   @id @default(uuid()) @db.Uuid
+  changePlanId String   @map("change_plan_id") @db.Uuid
+  name         String
+  /// Why this group is affected and what role they play in the change.
+  description  String?
+  /// Atkins behavior specification scoped to this group.
+  behaviorSpec String?  @map("behavior_spec")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  changePlan ChangePlan               @relation(fields: [changePlanId], references: [id], onDelete: Cascade)
+  members    StakeholderGroupMember[]
+
+  @@map("stakeholder_group")
+}
+
+model StakeholderGroupMember {
+  stakeholderGroupId String @map("stakeholder_group_id") @db.Uuid
+  employeeId         String @map("employee_id")          @db.Uuid
+
+  stakeholderGroup StakeholderGroup @relation(fields: [stakeholderGroupId], references: [id], onDelete: Cascade)
+  employee         Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@id([stakeholderGroupId, employeeId])
+  @@map("stakeholder_group_member")
+}
+
+// -----------------------------------------------------------------------
+// Training documents.
+//
+// Per spec §"Step 1: Leadership opens the planning wizard" — "Leader
+// uploads any training docs, SOPs, policy documents, FAQs relevant to
+// this change. PDF, DOCX, markdown. These become the agent's RAG
+// knowledge base for answering employee questions during the rollout.
+// Scoped to this specific change — no cross-contamination with prior
+// changes."
+//
+// In this iteration we ingest + parse to text only. Chunking + embedding
+// happens when the agent layer is built and we know the retrieval shape
+// we actually need.
+// -----------------------------------------------------------------------
+
+// -----------------------------------------------------------------------
+// Teams conversation references.
+//
+// Captured the first time a Teams user adds the bot to a 1:1 chat
+// (installationUpdate.add) or any subsequent message we receive from
+// them. The full ConversationReference lets us send proactive 1:1
+// messages later via CloudAdapter.continueConversation, no further
+// inbound activity required. This is what enables the spec's day-zero
+// kickoff DMs and ongoing check-ins.
+//
+// Not yet linked to Organization; we resolve the membership lazily by
+// matching `userEmail` against `Employee.email` so the bot can be
+// installed tenant-wide before the org chart upload lands.
+// -----------------------------------------------------------------------
+
+model TeamsConversationReference {
+  id              String   @id @default(uuid()) @db.Uuid
+  /// Optional org/employee link. Resolved by AAD object id first, then
+  /// email as a fallback for older references.
+  organizationId  String?  @map("organization_id") @db.Uuid
+  employeeId      String?  @map("employee_id") @db.Uuid
+
+  /// AAD object id of the user in Entra. Stable across renames.
+  aadObjectId     String   @unique @map("aad_object_id")
+  /// User Principal Name / email at install time.
+  userEmail       String?  @map("user_email")
+  userName        String?  @map("user_name")
+  /// Microsoft tenant id the bot was installed into.
+  tenantId        String   @map("tenant_id")
+  /// Service URL for the conversation (region-specific Bot Connector).
+  serviceUrl      String   @map("service_url")
+  /// 1:1 conversation id between the bot and this user.
+  conversationId  String   @map("conversation_id")
+
+  /// Full ConversationReference object as JSON. Passed verbatim to
+  /// CloudAdapter.continueConversation for proactive sends.
+  reference       Json
+  /// Last activity we observed from this user (any direction). Useful
+  /// for spotting stale references before a send.
+  lastActivityAt  DateTime @default(now()) @map("last_activity_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt        @map("updated_at")
+
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([employeeId])
+  @@index([tenantId])
+  @@map("teams_conversation_reference")
+}
+
+model TrainingDocument {
+  id              String                 @id @default(uuid()) @db.Uuid
+  changePlanId    String                 @map("change_plan_id") @db.Uuid
+  filename        String
+  mimeType        String                 @map("mime_type")
+  bytes           Int
+  /// Vercel Blob URL. Public-read tokens are fine here because the
+  /// URL is cryptographically random and only stored in this table.
+  blobUrl         String                 @map("blob_url")
+  /// Plain-text extraction of the file. Nullable while parsing is in
+  /// flight or if parsing failed.
+  extractedText   String?                @map("extracted_text")
+  pageCount       Int?                   @map("page_count")
+  processingStatus TrainingDocumentStatus @default(pending) @map("processing_status")
+  /// If parsing failed, the human-readable reason.
+  error           String?
+
+  /// Status of the chunk+embed pipeline that powers the agent's
+  /// `lookup_training_doc` tool. Independent from `processingStatus`
+  /// (text extraction) so we can re-run indexing without re-parsing.
+  indexStatus     TrainingDocumentIndexStatus @default(pending) @map("index_status")
+  /// Free-text reason when indexing failed.
+  indexError      String?                     @map("index_error")
+  /// Set when the chunk+embed run completed. Null while pending or
+  /// after a failure that hasn't yet succeeded.
+  indexedAt       DateTime?                   @map("indexed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt      @map("updated_at")
+
+  changePlan ChangePlan @relation(fields: [changePlanId], references: [id], onDelete: Cascade)
+  chunks     TrainingDocumentChunk[]
+
+  @@index([changePlanId])
+  @@map("training_document")
+}
+
+// -----------------------------------------------------------------------
+// Training-doc chunks for the agent's reactive Q&A surface.
+//
+// Chunking + (optional) embedding happens after the parse pipeline
+// drops `extractedText`. Each chunk is a ~600-char window with ~100
+// chars of overlap so a fact that straddles a window boundary is
+// retrievable from at least one side.
+//
+// `embedding` is `Float[]` (nullable). When OPENAI_API_KEY is set we
+// embed with text-embedding-3-small (1536d) and rank by cosine. When
+// it's not set the agent's lookup falls back to lexical (token
+// overlap) scoring across the same chunks — both paths exercise the
+// same tool surface so callers don't need to branch.
+// -----------------------------------------------------------------------
+model TrainingDocumentChunk {
+  id                 String   @id @default(uuid()) @db.Uuid
+  trainingDocumentId String   @map("training_document_id") @db.Uuid
+  /// Stable order within the document. Lets the dashboard render
+  /// "page 3 of 12" hints and guarantees deterministic re-index.
+  ord                Int
+  /// Verbatim chunk text. Trimmed but otherwise unmodified.
+  content            String
+  /// Rough character count — duplicated for fast histograms in
+  /// admin tooling without rehydrating the full content column.
+  charCount          Int      @map("char_count")
+  /// Approximate page number (PDFs only). Best-effort from
+  /// chunk-position-over-total-length × pageCount.
+  pageHint           Int?     @map("page_hint")
+  /// Embedding vector when an embedder is configured. Stored as a
+  /// plain Float[] (cosine similarity is fast enough in app for the
+  /// per-plan corpus sizes we expect at MLP). Nullable so the
+  /// fallback lexical path still has rows to score against.
+  embedding          Float[]
+  /// Identifier of the model that produced `embedding`. Used to
+  /// decide whether to re-embed when we change models.
+  embeddingModel     String?  @map("embedding_model")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  trainingDocument TrainingDocument @relation(fields: [trainingDocumentId], references: [id], onDelete: Cascade)
+
+  @@index([trainingDocumentId, ord])
+  @@map("training_document_chunk")
+}
+
+// -----------------------------------------------------------------------
+// Change enrollments + baseline survey.
+//
+// On Activate, every distinct employee covered by any stakeholder group
+// gets one ChangeEnrollment. The kickoff dispatcher fills in
+// kickoffStatus per row; the survey link in the kickoff DM uses
+// `surveyToken` for token-only auth (the survey is private to the
+// employee and never sees the leadership session).
+// -----------------------------------------------------------------------
+
+enum ChangeEnrollmentKickoffStatus {
+  pending
+  sent
+  /// No TeamsConversationReference matched the employee email at send time.
+  /// Recoverable: leadership can hit Resend after the user installs the bot.
+  skipped_no_bot
+  failed
+
+  @@map("change_enrollment_kickoff_status")
+}
+
+enum BaselineSurveyStatus {
+  not_started
+  in_progress
+  completed
+
+  @@map("baseline_survey_status")
+}
+
+model ChangeEnrollment {
+  id              String                        @id @default(uuid()) @db.Uuid
+  changePlanId    String                        @map("change_plan_id") @db.Uuid
+  employeeId      String                        @map("employee_id") @db.Uuid
+
+  kickoffStatus   ChangeEnrollmentKickoffStatus @default(pending) @map("kickoff_status")
+  kickoffSentAt   DateTime?                     @map("kickoff_sent_at")
+  /// Last error string from the Bot Connector if the send failed.
+  kickoffError    String?                       @map("kickoff_error")
+
+  /// Token used in the public survey URL (/s/[token]). 32 random bytes
+  /// base64url-encoded, ~43 chars. Globally unique so we can route any
+  /// inbound survey hit to the right enrollment without an auth session.
+  surveyToken     String                        @unique @map("survey_token")
+  surveyStatus    BaselineSurveyStatus          @default(not_started) @map("survey_status")
+  surveyStartedAt DateTime?                     @map("survey_started_at")
+  surveyCompletedAt DateTime?                   @map("survey_completed_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  /// Three-dimensional response baseline captured by the agent during
+  /// the kickoff conversation (Piderit). Free-text per dimension; null
+  /// until the agent has heard enough to characterize each one. The
+  /// agent records these via the `record_three_dim_baseline` tool.
+  baselineCognitive  String? @map("baseline_cognitive")
+  baselineEmotional  String? @map("baseline_emotional")
+  baselineBehavioral String? @map("baseline_behavioral")
+  baselineCapturedAt DateTime? @map("baseline_captured_at")
+
+  changePlan ChangePlan              @relation(fields: [changePlanId], references: [id], onDelete: Cascade)
+  employee   Employee                @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  response   BaselineSurveyResponse?
+  agentMessages           AgentMessage[]
+  concerns                Concern[]
+  implementationIntentions ImplementationIntention[]
+  scheduledCheckIns       ScheduledCheckIn[]
+  threeDimSnapshots       ThreeDimSnapshot[]
+  amendmentDeliveries     AmendmentDelivery[]
+  scheduledVoiceCall      ScheduledVoiceCall?
+
+  @@unique([changePlanId, employeeId])
+  @@index([changePlanId])
+  @@map("change_enrollment")
+}
+
+model BaselineSurveyResponse {
+  id           String   @id @default(uuid()) @db.Uuid
+  enrollmentId String   @unique @map("enrollment_id") @db.Uuid
+
+  /// Oreg Resistance to Change short form. Shape: { items: number[], score: number }.
+  oregRtc                Json @map("oreg_rtc")
+  /// Deci & Ryan causality orientations short form. Shape:
+  /// { items: string[], subscale: { autonomy, control, impersonal } }.
+  causalityOrientation   Json @map("causality_orientation")
+  /// Free-text + radio answers, one key per prompt.
+  workingPreferences     Json @map("working_preferences")
+  /// Free-text answers about prior change history.
+  priorChangeExperience  Json @map("prior_change_experience")
+
+  submittedAt DateTime @default(now()) @map("submitted_at")
+
+  enrollment ChangeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@map("baseline_survey_response")
+}
+
+// -----------------------------------------------------------------------
+// Agent conversation layer.
+//
+// AgentMessage is the single source of truth for the conversation
+// between the Grasp agent and a specific enrolled employee for a
+// specific change. Channel (teams|simulator|email) is recorded so the
+// dashboard can show where things landed; payload covers tool calls
+// and tool results so we can rehydrate the model context exactly on
+// the next turn.
+//
+// We deliberately do NOT use Prisma relations to Concern /
+// ImplementationIntention here — those are first-class artifacts in
+// their own tables (so leadership can browse / filter them) and the
+// agent message references them only by id in its tool-result payload.
+// -----------------------------------------------------------------------
+
+enum AgentMessageRole {
+  system
+  user
+  assistant
+  tool
+
+  @@map("agent_message_role")
+}
+
+enum AgentMessageChannel {
+  teams
+  simulator
+  email
+  system
+
+  @@map("agent_message_channel")
+}
+
+model AgentMessage {
+  id           String              @id @default(uuid()) @db.Uuid
+  enrollmentId String              @map("enrollment_id") @db.Uuid
+  role         AgentMessageRole
+  /// Plain-text body. For tool results this is the human-readable
+  /// confirmation surfaced back to the model ("Recorded.") so the
+  /// transcript stays legible in the dashboard.
+  content      String
+  /// Channel the human leg of this turn came in on. For assistant
+  /// turns that originated from a user message, this is whatever the
+  /// human used. For system/tool turns, "system".
+  channel      AgentMessageChannel @default(system)
+  /// Anthropic tool_use blocks the assistant emitted on this turn.
+  /// Shape: [{ id, name, input }]. Null when the assistant just
+  /// produced text. Persisted so the next-turn re-hydration includes
+  /// the tool_use blocks the API requires when sending tool_result.
+  toolCalls    Json?               @map("tool_calls")
+  /// Anthropic tool_result blocks paired to a prior assistant
+  /// tool_use. Shape: [{ tool_use_id, content }]. Null when not a
+  /// tool turn.
+  toolResults  Json?               @map("tool_results")
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  enrollment ChangeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([enrollmentId, createdAt])
+  @@map("agent_message")
+}
+
+// -----------------------------------------------------------------------
+// Implementation intention — Gollwitzer's "when X happens, I will do Y".
+// Captured by the agent during kickoff conversation; the highest-leverage
+// behavioral intervention per the spec. One employee-per-change can have
+// multiple (e.g. trigger A -> action 1; trigger B -> action 2).
+// -----------------------------------------------------------------------
+
+model ImplementationIntention {
+  id           String   @id @default(uuid()) @db.Uuid
+  enrollmentId String   @map("enrollment_id") @db.Uuid
+  /// "When X happens" — the cue. Free text in the user's words.
+  trigger      String
+  /// "I will do Y" — the action. Free text in the user's words.
+  action       String
+  /// Optional reference to the stakeholder group's behavior spec this
+  /// intention maps to. Lets the dashboard show "Naomi committed to a
+  /// flow for Purchasing Team's behavior #2" later.
+  stakeholderGroupId String? @map("stakeholder_group_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  enrollment ChangeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([enrollmentId])
+  @@map("implementation_intention")
+}
+
+// -----------------------------------------------------------------------
+// Surfaced concern — Piderit three-dimensional characterization.
+//
+// The agent classifies an in-flight objection along cognitive /
+// emotional / behavioral dimensions and surfaces it for leadership
+// response. Status starts `open` and moves through `responded` once
+// leadership replies (the response loop is a separate slice).
+// -----------------------------------------------------------------------
+
+enum ConcernDimension {
+  cognitive
+  emotional
+  behavioral
+
+  @@map("concern_dimension")
+}
+
+enum ConcernStatus {
+  open
+  responded
+  resolved
+
+  @@map("concern_status")
+}
+
+model Concern {
+  id           String           @id @default(uuid()) @db.Uuid
+  enrollmentId String           @map("enrollment_id") @db.Uuid
+  /// One-line agent-written summary suitable for the dashboard list.
+  summary      String
+  /// Primary Piderit dimension. The agent picks the dominant one even
+  /// when there's bleed across dimensions.
+  dimension    ConcernDimension
+  /// Likely underlying drivers beyond surface content (tiredness,
+  /// exclusion from decision, loss processing, substantive disagreement,
+  /// etc.). Stored as string[] for filtering.
+  drivers      String[]         @default([])
+  /// Suggested response path the leader can use as a starting point.
+  /// Optional — sometimes the agent is unsure.
+  suggestedResponse String?     @map("suggested_response")
+  /// Verbatim snippet from the employee that triggered the surfacing.
+  /// Persisted so leadership can see what was actually said, not just
+  /// the agent's summary.
+  rawQuote     String?          @map("raw_quote")
+  status       ConcernStatus    @default(open)
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  /// Leadership's response, in their own words. This is what gets
+  /// woven (not paraphrased) into the agent's next message to the
+  /// employee. Set by `respondToConcern` server action.
+  responseBody       String?   @map("response_body")
+  /// Who on the leadership side wrote the response. Surfaced to
+  /// leadership in the dashboard for accountability; NOT shown to
+  /// the employee unless they ask (the agent decides — the response
+  /// is from "leadership" by default, the named person if asked).
+  respondedByUserId  String?   @map("responded_by_user_id")
+  respondedAt        DateTime? @map("responded_at")
+  /// When the agent successfully wove the response into a DM and we
+  /// got an OK back from the channel. Distinct from `respondedAt`
+  /// because the proactive turn can fail (LLM down, channel down)
+  /// and we want to retry without losing the leader's reply.
+  deliveredAt        DateTime? @map("delivered_at")
+  /// Last error from a failed delivery attempt; null on success.
+  /// Surfaced in the dashboard so leadership knows when their
+  /// response is stuck rather than silently dropped.
+  deliveryError      String?   @map("delivery_error")
+
+  enrollment ChangeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  respondedBy User?           @relation("ConcernRespondedBy", fields: [respondedByUserId], references: [id])
+  amendmentLinks AmendmentSourceConcern[]
+
+  @@index([enrollmentId, createdAt])
+  /// Delivery worker / proactive turn picks up rows where a leader has
+  /// responded but we haven't yet pushed the message to the employee.
+  @@index([deliveredAt, respondedAt])
+  @@map("concern")
+}
+
+// -----------------------------------------------------------------------
+// Scheduled check-ins.
+//
+// Per the spec's continuous-engagement loop, every enrollment gets a
+// fixed cadence of agent-initiated nudges after kickoff: day 3, week
+// 1, week 3. Each row represents one scheduled occurrence; the cron
+// drains rows whose `scheduledFor` is in the past and `status` is
+// `scheduled`. Dispatch flips it to `dispatched` (or `skipped`/`failed`).
+//
+// Kind is the canonical anchor; we pin scheduledFor at activation
+// time so a later edit to kickoffDate doesn't silently shift sent
+// check-ins. Re-running the scheduler on an already-active plan is a
+// no-op for that plan (skipDuplicates on the (enrollmentId, kind)
+// composite unique).
+// -----------------------------------------------------------------------
+
+enum ScheduledCheckInKind {
+  day_3
+  week_1
+  week_3
+
+  @@map("scheduled_check_in_kind")
+}
+
+enum CheckInStatus {
+  scheduled
+  dispatched
+  skipped
+  failed
+
+  @@map("check_in_status")
+}
+
+model RolloutCheckInTemplate {
+  id           String               @id @default(uuid()) @db.Uuid
+  changePlanId String               @map("change_plan_id") @db.Uuid
+  kind         ScheduledCheckInKind
+  offsetDays   Int                  @map("offset_days")
+  enabled      Boolean              @default(true)
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt      @map("updated_at")
+
+  changePlan ChangePlan @relation(fields: [changePlanId], references: [id], onDelete: Cascade)
+
+  @@unique([changePlanId, kind])
+  @@index([changePlanId])
+  @@map("rollout_check_in_template")
+}
+
+model ScheduledCheckIn {
+  id           String              @id @default(uuid()) @db.Uuid
+  enrollmentId String              @map("enrollment_id") @db.Uuid
+  kind         ScheduledCheckInKind
+  /// When the cron should pick this up. Computed at scheduling time
+  /// from the plan's activation timestamp + the kind's day offset.
+  scheduledFor DateTime            @map("scheduled_for")
+  status       CheckInStatus       @default(scheduled)
+  /// When dispatch ran successfully. Distinct from `scheduledFor`
+  /// (which is the target time) so we can audit drift.
+  dispatchedAt DateTime?           @map("dispatched_at")
+  /// Per-channel outcome captured by the dispatcher; same shape as
+  /// the proactive delivery result. Stored verbatim for debugging.
+  channels     Json?
+  /// Last error message if dispatch failed; null on success.
+  error        String?
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  enrollment ChangeEnrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  snapshots  ThreeDimSnapshot[]
+
+  @@unique([enrollmentId, kind])
+  /// Drain queue: cron orders by scheduledFor asc and filters status.
+  @@index([status, scheduledFor])
+  @@map("scheduled_check_in")
+}
+
+// -----------------------------------------------------------------------
+// Three-dimensional response snapshots (Piderit, recurring).
+//
+// The kickoff conversation captures one baseline (also denormalized
+// onto ChangeEnrollment.baseline* for the dashboard's hot path). Each
+// scheduled check-in writes ANOTHER snapshot here. The agent reads
+// the baseline + the most recent snapshot to detect drift ("she said
+// X at kickoff, now she's saying Y").
+//
+// Kind links a snapshot back to the check-in that produced it, when
+// applicable. `ad_hoc` is for snapshots the agent captures during a
+// user-initiated mid-cadence conversation (e.g. an employee proactively
+// reaches out and reveals their stance has shifted).
+// -----------------------------------------------------------------------
+
+enum ThreeDimSnapshotKind {
+  baseline
+  day_3
+  week_1
+  week_3
+  ad_hoc
+
+  @@map("three_dim_snapshot_kind")
+}
+
+model ThreeDimSnapshot {
+  id           String               @id @default(uuid()) @db.Uuid
+  enrollmentId String               @map("enrollment_id") @db.Uuid
+  kind         ThreeDimSnapshotKind
+  cognitive    String
+  emotional    String
+  behavioral   String
+  /// Optional check-in row that produced this snapshot. Null for
+  /// baseline + ad_hoc snapshots.
+  checkInId    String?              @map("check_in_id") @db.Uuid
+  capturedAt   DateTime             @default(now()) @map("captured_at")
+
+  enrollment ChangeEnrollment  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  checkIn    ScheduledCheckIn? @relation(fields: [checkInId], references: [id], onDelete: SetNull)
+
+  @@index([enrollmentId, capturedAt])
+  @@map("three_dim_snapshot")
+}
+
+// -----------------------------------------------------------------------
+// Change amendments.
+//
+// When multiple employees raise overlapping concerns and leadership
+// decides to update the change itself (rather than just respond
+// per-person), they author an amendment. The amendment is the verbatim
+// leadership note ("we heard you, here's what's changing"); Grasp's
+// agent fans it out to each affected employee with attribution to the
+// concerns that surfaced it ("you raised X — leadership updated the
+// rollout to do Y about it").
+//
+// Audience picks who gets it: `everyone` covers all enrollments on the
+// plan; `surfacers` only covers employees whose concerns are linked
+// via AmendmentSourceConcern. Source concerns drive both the audience
+// (when `surfacers`) and the per-recipient credit line in the agent's
+// delivery turn.
+//
+// AmendmentDelivery is the per-(amendment, enrollment) tracking row,
+// shaped like ScheduledCheckIn so the same drain/cron pattern works.
+// -----------------------------------------------------------------------
+
+enum AmendmentAudience {
+  everyone
+  surfacers
+
+  @@map("amendment_audience")
+}
+
+enum AmendmentDeliveryStatus {
+  scheduled
+  dispatched
+  skipped
+  failed
+
+  @@map("amendment_delivery_status")
+}
+
+model ChangeAmendment {
+  id              String            @id @default(uuid()) @db.Uuid
+  changePlanId    String            @map("change_plan_id") @db.Uuid
+  /// Author on the leadership side. Surfaced in the dashboard for
+  /// accountability; not shown to employees by default (the agent
+  /// frames the message as "from leadership").
+  authoredByUserId String           @map("authored_by_user_id")
+
+  /// Short label for the dashboard ("Lengthening the rollout window").
+  summary         String
+  /// The verbatim leadership update. The agent frames around it but
+  /// MUST surface this text intact in its delivery turn.
+  body            String
+  audience        AmendmentAudience @default(everyone)
+
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  changePlan ChangePlan              @relation(fields: [changePlanId], references: [id], onDelete: Cascade)
+  authoredBy User                    @relation("AmendmentAuthoredBy", fields: [authoredByUserId], references: [id])
+  sourceConcerns AmendmentSourceConcern[]
+  deliveries     AmendmentDelivery[]
+
+  @@index([changePlanId, createdAt])
+  @@map("change_amendment")
+}
+
+model AmendmentSourceConcern {
+  amendmentId String  @map("amendment_id") @db.Uuid
+  concernId   String  @map("concern_id")   @db.Uuid
+
+  amendment ChangeAmendment @relation(fields: [amendmentId], references: [id], onDelete: Cascade)
+  concern   Concern         @relation(fields: [concernId], references: [id], onDelete: Cascade)
+
+  @@id([amendmentId, concernId])
+  @@index([concernId])
+  @@map("amendment_source_concern")
+}
+
+model AmendmentDelivery {
+  id           String                   @id @default(uuid()) @db.Uuid
+  amendmentId  String                   @map("amendment_id") @db.Uuid
+  enrollmentId String                   @map("enrollment_id") @db.Uuid
+  status       AmendmentDeliveryStatus  @default(scheduled)
+  dispatchedAt DateTime?                @map("dispatched_at")
+  /// Per-channel outcome (same shape as ScheduledCheckIn.channels).
+  channels     Json?
+  error        String?
+  createdAt    DateTime                 @default(now()) @map("created_at")
+
+  amendment  ChangeAmendment  @relation(fields: [amendmentId], references: [id], onDelete: Cascade)
+  enrollment ChangeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([amendmentId, enrollmentId])
+  @@index([status, createdAt])
+  @@map("amendment_delivery")
+}
+
+// -----------------------------------------------------------------------
+// Voice kickoff calls.
+//
+// Optional per-plan flow where Grasp deploys a Recall.ai-driven voice
+// agent (powered by OpenAI Realtime) into a leader-provided Teams
+// meeting at a per-employee scheduled time. We sequence employees in
+// the same room URL by staggering scheduledFor; the .ics attached to
+// the kickoff DM gives the employee a calendar event for their slot.
+//
+// One row per ChangeEnrollment, gated on ChangePlan.voiceKickoffEnabled.
+// The cron at /api/cron/voice-calls drains rows whose scheduledFor is
+// within ~2min of now and dispatches them through Recall.ai; the post-
+// call webhook flips them to `completed` and persists the transcript.
+// -----------------------------------------------------------------------
+
+enum VoiceCallStatus {
+  scheduled
+  dispatched
+  completed
+  skipped
+  failed
+
+  @@map("voice_call_status")
+}
+
+model ScheduledVoiceCall {
+  id            String           @id @default(uuid()) @db.Uuid
+  enrollmentId  String           @map("enrollment_id") @db.Uuid
+  changePlanId  String           @map("change_plan_id") @db.Uuid
+  /// Per-employee start time. Activation stages these by enrollment
+  /// tier (manager-first), spaced by `voiceKickoffStaggerMinutes`.
+  scheduledFor  DateTime         @map("scheduled_for")
+  status        VoiceCallStatus  @default(scheduled)
+  /// Per-employee Teams meeting URL, returned by Graph's
+  /// /onlineMeetings POST. Unique per row — every employee gets their
+  /// own room so two enrollees can't collide. Null until the Graph
+  /// invite step succeeds; the dispatcher skips rows missing this.
+  meetingJoinUrl String?         @map("meeting_join_url")
+  /// Microsoft Graph `onlineMeeting.id`. Kept so we can DELETE the
+  /// meeting if the row gets cancelled / rescheduled.
+  graphMeetingId String?         @map("graph_meeting_id")
+  /// Microsoft Graph `event.id` of the calendar invite we sent the
+  /// employee. Kept so we can update or cancel the invite if the
+  /// scheduled time changes after activation.
+  graphEventId   String?         @map("graph_event_id")
+  /// Set when the Graph invite landed in the employee's mailbox.
+  /// Distinct from `dispatchedAt` (which is the Recall bot deploy).
+  inviteSentAt   DateTime?       @map("invite_sent_at")
+  /// Last error string from Graph if the invite step failed. Surfaced
+  /// in the dashboard so leadership knows when an enrollee's invite
+  /// is stuck rather than silently dropped.
+  inviteError    String?         @map("invite_error")
+  /// Recall.ai bot id, set when the bot is deployed into the meeting.
+  recallBotId   String?          @map("recall_bot_id")
+  dispatchedAt  DateTime?        @map("dispatched_at")
+  completedAt   DateTime?        @map("completed_at")
+  /// JSON transcript from Recall.ai once the call ends. Shape mirrors
+  /// the Recall.ai bot transcript payload; we don't reshape it on save
+  /// because the post-call extractor reads it directly.
+  transcript    Json?
+  error         String?
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  enrollment ChangeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  changePlan ChangePlan       @relation(fields: [changePlanId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId])
+  @@index([status, scheduledFor])
+  @@index([recallBotId])
+  @@map("scheduled_voice_call")
+}
+

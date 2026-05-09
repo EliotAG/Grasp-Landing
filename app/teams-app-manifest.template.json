@@ -1,0 +1,39 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "0.1.1",
+  "id": "{{MICROSOFT_APP_ID}}",
+  "developer": {
+    "name": "Grasp",
+    "websiteUrl": "https://withgrasp.com",
+    "privacyUrl": "https://withgrasp.com/privacy",
+    "termsOfUseUrl": "https://withgrasp.com/terms"
+  },
+  "name": {
+    "short": "Grasp",
+    "full": "Grasp Change Management Agent"
+  },
+  "description": {
+    "short": "Grasp helps teams plan and land workplace changes.",
+    "full": "Grasp helps leadership teams plan internal changes, check in with affected employees, surface concerns, and close the loop inside Microsoft Teams."
+  },
+  "icons": {
+    "outline": "outline.png",
+    "color": "color.png"
+  },
+  "accentColor": "#2E7D32",
+  "bots": [
+    {
+      "botId": "{{MICROSOFT_APP_ID}}",
+      "scopes": ["personal"],
+      "supportsFiles": false,
+      "isNotificationOnly": false
+    }
+  ],
+  "webApplicationInfo": {
+    "id": "{{MICROSOFT_APP_ID}}",
+    "resource": "api://{{APP_HOSTNAME}}/{{MICROSOFT_APP_ID}}"
+  },
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": ["{{APP_HOSTNAME}}"]
+}

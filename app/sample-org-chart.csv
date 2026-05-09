@@ -1,0 +1,33 @@
+name,email,title,team,manager_email
+Marcus Reilly,marcus.reilly@unifiedcomms.example,CEO,Executive,
+Diane Park,diane.park@unifiedcomms.example,COO,Executive,marcus.reilly@unifiedcomms.example
+Anita Voss,anita.voss@unifiedcomms.example,CFO,Finance,marcus.reilly@unifiedcomms.example
+Jordan Hale,jordan.hale@unifiedcomms.example,VP Sales,Sales,marcus.reilly@unifiedcomms.example
+Priya Shah,priya.shah@unifiedcomms.example,VP Engineering,Engineering,marcus.reilly@unifiedcomms.example
+Tom Becker,tom.becker@unifiedcomms.example,VP Operations,Operations,diane.park@unifiedcomms.example
+Rachel Liu,rachel.liu@unifiedcomms.example,IT Director,IT,diane.park@unifiedcomms.example
+Sam Greer,sam.greer@unifiedcomms.example,Sales Manager - Enterprise,Sales,jordan.hale@unifiedcomms.example
+Nora Patel,nora.patel@unifiedcomms.example,Sales Manager - Mid-Market,Sales,jordan.hale@unifiedcomms.example
+Derek Ward,derek.ward@unifiedcomms.example,Account Executive,Sales,sam.greer@unifiedcomms.example
+Olivia Chen,olivia.chen@unifiedcomms.example,Account Executive,Sales,sam.greer@unifiedcomms.example
+Brandon Mills,brandon.mills@unifiedcomms.example,Account Executive,Sales,sam.greer@unifiedcomms.example
+Maya Robinson,maya.robinson@unifiedcomms.example,Account Executive,Sales,nora.patel@unifiedcomms.example
+Tyler Brooks,tyler.brooks@unifiedcomms.example,Account Executive,Sales,nora.patel@unifiedcomms.example
+Chloe Singh,chloe.singh@unifiedcomms.example,SDR,Sales,nora.patel@unifiedcomms.example
+Karim Hassan,karim.hassan@unifiedcomms.example,Lead AV Engineer,Engineering,priya.shah@unifiedcomms.example
+Lena Fischer,lena.fischer@unifiedcomms.example,Lead AV Engineer,Engineering,priya.shah@unifiedcomms.example
+Ethan Wong,ethan.wong@unifiedcomms.example,AV Integration Engineer,Engineering,karim.hassan@unifiedcomms.example
+Hannah Ortiz,hannah.ortiz@unifiedcomms.example,AV Integration Engineer,Engineering,karim.hassan@unifiedcomms.example
+Devon Clarke,devon.clarke@unifiedcomms.example,AV Integration Engineer,Engineering,karim.hassan@unifiedcomms.example
+Ravi Kumar,ravi.kumar@unifiedcomms.example,AV Integration Engineer,Engineering,lena.fischer@unifiedcomms.example
+Sara Nilsen,sara.nilsen@unifiedcomms.example,AV Integration Engineer,Engineering,lena.fischer@unifiedcomms.example
+Marco Bianchi,marco.bianchi@unifiedcomms.example,Field Technician,Engineering,lena.fischer@unifiedcomms.example
+Grace Owens,grace.owens@unifiedcomms.example,Operations Manager,Operations,tom.becker@unifiedcomms.example
+Felix Tanaka,felix.tanaka@unifiedcomms.example,Project Coordinator,Operations,grace.owens@unifiedcomms.example
+Isabel Cruz,isabel.cruz@unifiedcomms.example,Project Coordinator,Operations,grace.owens@unifiedcomms.example
+Wesley Park,wesley.park@unifiedcomms.example,Project Coordinator,Operations,grace.owens@unifiedcomms.example
+Naomi Foster,naomi.foster@unifiedcomms.example,Procurement Specialist,Operations,tom.becker@unifiedcomms.example
+Ben Adler,ben.adler@unifiedcomms.example,Staff Accountant,Finance,anita.voss@unifiedcomms.example
+Megan Hu,megan.hu@unifiedcomms.example,Staff Accountant,Finance,anita.voss@unifiedcomms.example
+Jamal Rivera,jamal.rivera@unifiedcomms.example,IT Support Specialist,IT,rachel.liu@unifiedcomms.example
+Aisha Bello,aisha.bello@unifiedcomms.example,Systems Administrator,IT,rachel.liu@unifiedcomms.example

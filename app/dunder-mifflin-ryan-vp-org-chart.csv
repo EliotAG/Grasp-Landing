@@ -1,0 +1,26 @@
+name,email,title,team,manager_email
+Alan Brand,alan.brand@dundermifflin.example,Chief Executive Officer,Corporate,
+David Wallace,david.wallace@dundermifflin.example,Chief Financial Officer,Corporate,alan.brand@dundermifflin.example
+Ryan Howard,ryan.howard@dundermifflin.example,Vice President of Northeastern Sales / Director of New Media,Corporate,david.wallace@dundermifflin.example
+Kendall,kendall@dundermifflin.example,Corporate Human Resources Representative,Corporate,david.wallace@dundermifflin.example
+Karen Filippelli,karen.filippelli@dundermifflin.example,Regional Manager - Utica Branch,Utica Branch,ryan.howard@dundermifflin.example
+Michael Scott,michael.scott@dundermifflin.example,Regional Manager - Scranton Branch,Scranton Branch,ryan.howard@dundermifflin.example
+Toby Flenderson,toby.flenderson@dundermifflin.example,Human Resources Representative,Scranton Human Resources,kendall@dundermifflin.example
+Pam Beesly,pam.beesly@dundermifflin.example,Receptionist,Scranton Administration,michael.scott@dundermifflin.example
+Dwight Schrute,dwight.schrute@dundermifflin.example,Sales Representative / Assistant Regional Manager,Scranton Sales,michael.scott@dundermifflin.example
+Jim Halpert,jim.halpert@dundermifflin.example,Sales Representative,Scranton Sales,michael.scott@dundermifflin.example
+Andy Bernard,andy.bernard@dundermifflin.example,Sales Representative,Scranton Sales,michael.scott@dundermifflin.example
+Stanley Hudson,stanley.hudson@dundermifflin.example,Sales Representative,Scranton Sales,michael.scott@dundermifflin.example
+Phyllis Vance,phyllis.vance@dundermifflin.example,Sales Representative,Scranton Sales,michael.scott@dundermifflin.example
+Angela Martin,angela.martin@dundermifflin.example,Senior Accountant,Scranton Accounting,michael.scott@dundermifflin.example
+Oscar Martinez,oscar.martinez@dundermifflin.example,Accountant,Scranton Accounting,angela.martin@dundermifflin.example
+Kevin Malone,kevin.malone@dundermifflin.example,Accountant,Scranton Accounting,angela.martin@dundermifflin.example
+Creed Bratton,creed.bratton@dundermifflin.example,Quality Assurance Director,Scranton Operations,michael.scott@dundermifflin.example
+Meredith Palmer,meredith.palmer@dundermifflin.example,Supplier Relations Representative,Scranton Operations,michael.scott@dundermifflin.example
+Kelly Kapoor,kelly.kapoor@dundermifflin.example,Customer Service Representative,Scranton Customer Service,michael.scott@dundermifflin.example
+Darryl Philbin,darryl.philbin@dundermifflin.example,Warehouse Manager,Scranton Warehouse,michael.scott@dundermifflin.example
+Lonny Collins,lonny.collins@dundermifflin.example,Warehouse Worker,Scranton Warehouse,darryl.philbin@dundermifflin.example
+Madge Madsen,madge.madsen@dundermifflin.example,Warehouse Worker,Scranton Warehouse,darryl.philbin@dundermifflin.example
+Hide,hide@dundermifflin.example,Warehouse Worker,Scranton Warehouse,darryl.philbin@dundermifflin.example
+Glenn,glenn@dundermifflin.example,Warehouse Worker,Scranton Warehouse,darryl.philbin@dundermifflin.example
+Hank Tate,hank.tate@dundermifflin.example,Security Guard,Scranton Building Services,michael.scott@dundermifflin.example

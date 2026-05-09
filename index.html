@@ -142,7 +142,7 @@
           <span style="font-family:'Newsreader',serif;font-size:26px;font-weight:400;letter-spacing:-0.03em">grasp</span>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0">
-          <a href="sms:9196015897&body=I'd love to learn more about Grasp!" style="font-family:'DM Sans',system-ui,sans-serif;font-size:15px;font-weight:600;color:#111;letter-spacing:-0.01em;text-decoration:none">(919) 601-5897</a>
+          <a href="sms:8325707361&body=I'd love to learn more about Grasp!" style="font-family:'DM Sans',system-ui,sans-serif;font-size:15px;font-weight:600;color:#111;letter-spacing:-0.01em;text-decoration:none">(832) 570-7361</a>
           <div style="display:flex;align-items:center;gap:4px;margin-top:2px">
             <span style="font-family:'DM Sans',system-ui,sans-serif;font-size:11px;font-weight:500;color:#595959;letter-spacing:0.02em">Text us</span>
             <span style="font-size:13px;color:#595959;line-height:1;transform:scaleX(0.7);display:inline-block">↑</span>
@@ -174,9 +174,10 @@
         </div>
         <div>
           <div class="hero-buttons" style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
-            <a href="#cta" class="btn-press" style="background:#111;color:#FAF9F6;border:none;padding:15px 36px;border-radius:100px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',system-ui,sans-serif;box-shadow:0 2px 20px rgba(0,0,0,0.08);text-decoration:none">Join the waitlist</a>
-            <a href="https://calendar.app.google/nYd9AsDNHrXup8Lk9" target="_blank" rel="noopener noreferrer" style="background:rgba(255,255,255,0.6);color:#333;border:1px solid rgba(0,0,0,0.1);padding:15px 36px;border-radius:100px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',system-ui,sans-serif;backdrop-filter:blur(8px);transition:all .2s ease;text-decoration:none">Book a call</a>
+            <a id="get-started-cta" href="https://app.withgrasp.com" rel="noopener" class="btn-press" style="background:#111;color:#FAF9F6;border:none;padding:15px 36px;border-radius:100px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',system-ui,sans-serif;box-shadow:0 2px 20px rgba(0,0,0,0.08);text-decoration:none">Get started</a>
+            <a href="https://calendar.app.google/nYd9AsDNHrXup8Lk9" target="_blank" rel="noopener noreferrer" style="background:rgba(255,255,255,0.6);color:#333;border:1px solid rgba(0,0,0,0.1);padding:15px 36px;border-radius:100px;font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',system-ui,sans-serif;backdrop-filter:blur(8px);transition:all .2s ease;text-decoration:none">Meet us</a>
           </div>
+          <p style="font-size:12px;color:#777;margin:18px 0 0;font-family:'DM Sans',system-ui,sans-serif;letter-spacing:0.01em">Free to sign up and plan your rollout. Live activation unlocks once a Grasp founder approves your workspace.</p>
         </div>
       </section>
 
@@ -471,6 +472,13 @@
           <span style="font-family:'Newsreader',serif;font-size:18px;color:#595959;letter-spacing:-0.02em">grasp</span>
         </div>
         <div style="font-size:11px;color:#595959;margin-top:4px;letter-spacing:0.02em">The AI agent that runs your technology rollout campaigns.</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:14px;font-family:'DM Sans',system-ui,sans-serif;font-size:12px;color:#595959">
+          <span>&copy; <span id="footer-year"></span> Grasp Co</span>
+          <span style="color:#d8d8d8">&middot;</span>
+          <a id="footer-terms" href="https://app.withgrasp.com/terms" rel="noopener" style="color:#595959;text-decoration:none">Terms of Service</a>
+          <span style="color:#d8d8d8">&middot;</span>
+          <a id="footer-privacy" href="https://app.withgrasp.com/privacy" rel="noopener" style="color:#595959;text-decoration:none">Privacy Policy</a>
+        </div>
       </footer>
     </div>
 
@@ -503,6 +511,23 @@
         emailInput.addEventListener('keydown',function(e){if(e.key==='Enter')submit();});
         emailInput.addEventListener('focus',function(){emailInput.style.borderColor='rgba(0,0,0,0.25)';});
         emailInput.addEventListener('blur',function(){emailInput.style.borderColor='rgba(0,0,0,0.1)';});
+      })();
+    </script>
+
+    <script>
+      (function(){
+        var year = document.getElementById('footer-year');
+        if (year) year.textContent = String(new Date().getFullYear());
+
+        var host = location.hostname;
+        if (host === 'localhost' || host === '127.0.0.1') {
+          var cta = document.getElementById('get-started-cta');
+          if (cta) cta.href = 'http://localhost:3000';
+          var terms = document.getElementById('footer-terms');
+          if (terms) terms.href = 'http://localhost:3000/terms';
+          var privacy = document.getElementById('footer-privacy');
+          if (privacy) privacy.href = 'http://localhost:3000/privacy';
+        }
       })();
     </script>
   </body>
