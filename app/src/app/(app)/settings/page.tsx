@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { OrganizationTextChannel } from "@prisma/client";
 
+import { readOrgApproval } from "@/lib/access";
 import { auth } from "@/lib/auth";
+import { TEXT_CHANNEL_LABEL } from "@/lib/channels";
 import { prisma } from "@/lib/db";
 import {
   canManageWorkspaceMembers,
@@ -15,44 +18,52 @@ import {
   getOrganizationSlackConfig,
 } from "@/lib/slack/integration";
 import { InviteMemberForm } from "./invite-form";
+import { PrimaryChannelForm } from "./primary-channel-form";
 
 export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const session = await auth();
   const organizationId = session!.user.organizationId!;
-  const [teamsConfig, slackConfig, members, pendingInvites, employees] =
+  const { approved: orgApproved } = readOrgApproval(session);
+  const [org, teamsConfig, slackConfig, members, pendingInvites, employees] =
     await Promise.all([
-    getOrganizationTeamsConfig(organizationId),
-    getOrganizationSlackConfig(organizationId),
-    prisma.membership.findMany({
-      where: { organizationId },
-      include: { user: { select: { name: true, email: true, image: true } } },
-      orderBy: [{ role: "asc" }, { createdAt: "asc" }],
-    }),
-    prisma.organizationInvitation.findMany({
-      where: { organizationId, acceptedAt: null },
-      orderBy: { createdAt: "desc" },
-      select: { id: true, email: true, role: true, createdAt: true },
-    }),
-    prisma.employee.findMany({
-      where: { organizationId },
-      orderBy: [{ team: "asc" }, { name: "asc" }],
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        title: true,
-        team: true,
-      },
-    }),
-  ]);
+      prisma.organization.findUnique({
+        where: { id: organizationId },
+        select: { primaryTextChannel: true },
+      }),
+      getOrganizationTeamsConfig(organizationId),
+      getOrganizationSlackConfig(organizationId),
+      prisma.membership.findMany({
+        where: { organizationId },
+        include: { user: { select: { name: true, email: true, image: true } } },
+        orderBy: [{ role: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.organizationInvitation.findMany({
+        where: { organizationId, acceptedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, email: true, role: true, createdAt: true },
+      }),
+      prisma.employee.findMany({
+        where: { organizationId },
+        orderBy: [{ team: "asc" }, { name: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          title: true,
+          team: true,
+        },
+      }),
+    ]);
   const teamsProblem = describeTeamsConfigProblem(teamsConfig);
   const teamsStatus = !teamsProblem
     ? "Enabled"
     : teamsConfig.enabled
       ? "Incomplete"
       : "Disabled";
+  const primaryTextChannel =
+    org?.primaryTextChannel ?? OrganizationTextChannel.teams;
   const slackProblem = describeSlackConfigProblem(slackConfig);
   const slackStatus = !slackProblem
     ? "Enabled"
@@ -176,11 +187,39 @@ export default async function SettingsPage() {
         </div>
       </section>
 
+      <section className="card max-w-[860px] p-7">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="serif text-[22px] leading-[1.2]">
+              Primary employee messaging channel
+            </h2>
+            <p className="mt-1 max-w-[650px] text-[14px] leading-[1.6] text-[color:var(--color-muted)]">
+              This is the production channel Grasp uses for kickoff DMs,
+              scheduled check-ins, amendments, and leadership responses.
+              Simulator delivery is separate: it only mirrors messages for
+              internal testing when configured.
+            </p>
+          </div>
+          <span className="pill">
+            <span className="pill-dot" />
+            {TEXT_CHANNEL_LABEL[primaryTextChannel]}
+          </span>
+        </header>
+        <div className="mt-6">
+          <PrimaryChannelForm
+            value={primaryTextChannel}
+            disabled={!orgApproved}
+          />
+        </div>
+      </section>
+
       <section className="card max-w-[760px] p-7">
         <header>
           <h2 className="serif text-[22px] leading-[1.2]">Integrations</h2>
           <p className="mt-1 text-[14px] text-[color:var(--color-muted)]">
-            Test and monitor integrations that are wired into the product.
+            Configure the channels this workspace can use. The selected
+            primary channel above is the one Grasp uses for live employee
+            messages.
           </p>
         </header>
 
@@ -196,6 +235,12 @@ export default async function SettingsPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {primaryTextChannel === "teams" ? (
+                <span className="pill">
+                  <span className="pill-dot" />
+                  Primary
+                </span>
+              ) : null}
               <span className={`pill ${teamsProblem ? "opacity-60" : ""}`}>
                 <span
                   className={`pill-dot ${
@@ -218,6 +263,12 @@ export default async function SettingsPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {primaryTextChannel === "slack" ? (
+                <span className="pill">
+                  <span className="pill-dot" />
+                  Primary
+                </span>
+              ) : null}
               <span className={`pill ${slackProblem ? "opacity-60" : ""}`}>
                 <span
                   className={`pill-dot ${
@@ -229,43 +280,6 @@ export default async function SettingsPage() {
               <Link href="/settings/slack" className="btn btn-secondary">
                 Open
               </Link>
-            </div>
-          </li>
-          <li className="px-5 py-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[14px] font-medium text-ink">
-                  Slack setup notes
-                </p>
-                <p className="mt-0.5 text-[12.5px] text-[color:var(--color-muted)]">
-                  Slack uses a customer-owned Slack app with bot scopes, event
-                  subscriptions, and workspace install.
-                </p>
-              </div>
-              <span className="pill opacity-60">
-                <span className="pill-dot bg-[color:var(--color-muted)]" />
-                Docs
-              </span>
-            </div>
-            <div className="mt-4 rounded-xl border border-dashed border-[color:var(--color-line-strong)] bg-black/[0.015] px-4 py-3">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-[color:var(--color-muted)]">
-                Planned setup
-              </p>
-              <ol className="mt-2 space-y-1.5 text-[12.5px] leading-[1.55] text-[color:var(--color-ink-2)]">
-                <li>Create a Slack app in the customer workspace.</li>
-                <li>
-                  Add bot scopes for direct messages, user lookup, and event
-                  delivery.
-                </li>
-                <li>
-                  Point event subscriptions and interactivity to the Grasp
-                  workspace webhook.
-                </li>
-                <li>
-                  Install the app to the workspace, then test a proactive DM
-                  from this page.
-                </li>
-              </ol>
             </div>
           </li>
         </ul>

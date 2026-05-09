@@ -95,6 +95,13 @@ enum MembershipRole {
   @@map("membership_role")
 }
 
+enum OrganizationTextChannel {
+  teams
+  slack
+
+  @@map("organization_text_channel")
+}
+
 model Organization {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
@@ -113,6 +120,12 @@ model Organization {
   /// from a future admin UI. Null = pending approval; the timestamp
   /// is the moment access was granted (kept for audit).
   approvedAt DateTime? @map("approved_at")
+
+  /// Production employee messaging channel for kickoff DMs, scheduled
+  /// check-ins, amendments, and leadership responses. The simulator is
+  /// intentionally NOT an org-owned channel — it remains an internal
+  /// admin/test mirror controlled by deployment env vars.
+  primaryTextChannel OrganizationTextChannel @default(teams) @map("primary_text_channel")
 
   memberships  Membership[]
   invitations  OrganizationInvitation[]

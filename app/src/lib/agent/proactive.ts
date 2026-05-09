@@ -18,6 +18,7 @@ import { AgentMessageChannel, AgentMessageRole, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { DEFAULT_MODEL, getAnthropic, isAiEnabled } from "@/lib/ai/anthropic";
+import { getOrganizationPrimaryTextChannel } from "@/lib/channels";
 import { sendSimMessage } from "@/lib/integrations/simulator";
 import {
   SlackSendError,
@@ -254,24 +255,35 @@ export interface ChannelSendResult {
 }
 
 /**
- * Send a reply over the configured production text channel and the
- * dev simulator. Slack is preferred when configured because it can
- * open first-contact DMs by email; Teams remains the fallback.
+ * Send a reply over the org-selected production text channel and the
+ * internal simulator mirror.
+ *
+ * The important product rule: Slack vs Teams is an organization choice,
+ * not an implicit fallback chain. If the org selected Slack, Teams is
+ * skipped; if Slack is misconfigured, the send fails loudly so Settings
+ * tells the truth about where employee messages are going.
  */
 export async function sendReplyOnAllChannels(
   ctx: AgentContext,
   reply: string,
 ): Promise<ChannelSendResult> {
-  const slackConfig = await getOrganizationSlackConfig(ctx.employee.organizationId);
-  const slackProblem = describeSlackConfigProblem(slackConfig);
-  let slack: ProactiveDeliveryResult["channels"]["slack"] = slackProblem
-    ? "skipped"
-    : "skipped_no_bot";
+  const primaryChannel = await getOrganizationPrimaryTextChannel(
+    ctx.employee.organizationId,
+  );
+  let slack: ProactiveDeliveryResult["channels"]["slack"] = "skipped";
   let slackErr: string | null = null;
-  if (!slackProblem) {
+  if (primaryChannel === "slack") {
+    const slackConfig = await getOrganizationSlackConfig(
+      ctx.employee.organizationId,
+    );
+    const slackProblem = describeSlackConfigProblem(slackConfig);
+    slack = slackProblem ? "skipped" : "skipped_no_bot";
+    if (slackProblem) slackErr = slackProblem;
     try {
-      await sendSlackMessageByEmployee(ctx.employee, reply);
-      slack = "sent";
+      if (!slackProblem) {
+        await sendSlackMessageByEmployee(ctx.employee, reply);
+        slack = "sent";
+      }
     } catch (err) {
       slack = "failed";
       slackErr =
@@ -284,36 +296,39 @@ export async function sendReplyOnAllChannels(
     }
   }
 
-  const teamsConfig = await getOrganizationTeamsConfig(ctx.employee.organizationId);
-  const teamsProblem = describeTeamsConfigProblem(teamsConfig);
   let ref: { id: string } | null = null;
-  if (slack !== "sent" && !teamsProblem) {
-    ref = await resolveTeamsReferenceForEmployee(ctx.employee);
-    if (!ref) {
-      await ensureTeamsAppInstalledForEmployee(ctx.employee);
-      ref = await resolveTeamsReferenceForEmployee(ctx.employee);
-    }
-  }
-
-  let teams: ProactiveDeliveryResult["channels"]["teams"] = teamsProblem
-    ? "skipped"
-    : "skipped_no_bot";
+  let teams: ProactiveDeliveryResult["channels"]["teams"] = "skipped";
   let teamsErr: string | null = null;
-  if (slack === "sent") {
-    teams = teamsProblem ? "skipped" : "skipped";
-  } else if (ref?.id) {
-    try {
-      await sendTeamsMessageByReferenceId(ref.id, reply);
-      teams = "sent";
-    } catch (err) {
-      teams = "failed";
-      teamsErr =
-        err instanceof TeamsSendError
-          ? err.message
-          : err instanceof Error
+  if (primaryChannel === "teams") {
+    const teamsConfig = await getOrganizationTeamsConfig(
+      ctx.employee.organizationId,
+    );
+    const teamsProblem = describeTeamsConfigProblem(teamsConfig);
+    teams = teamsProblem ? "skipped" : "skipped_no_bot";
+    if (teamsProblem) teamsErr = teamsProblem;
+
+    if (!teamsProblem) {
+      ref = await resolveTeamsReferenceForEmployee(ctx.employee);
+      if (!ref) {
+        await ensureTeamsAppInstalledForEmployee(ctx.employee);
+        ref = await resolveTeamsReferenceForEmployee(ctx.employee);
+      }
+    }
+
+    if (!teamsProblem && ref?.id) {
+      try {
+        await sendTeamsMessageByReferenceId(ref.id, reply);
+        teams = "sent";
+      } catch (err) {
+        teams = "failed";
+        teamsErr =
+          err instanceof TeamsSendError
             ? err.message
-            : "Teams send failed";
-      console.error("[proactive] teams send failed:", teamsErr);
+            : err instanceof Error
+              ? err.message
+              : "Teams send failed";
+        console.error("[proactive] teams send failed:", teamsErr);
+      }
     }
   }
 
