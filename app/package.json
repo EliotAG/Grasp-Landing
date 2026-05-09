@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "pnpm": {
+    "overrides": {
+      "jwks-rsa@4.0.1>jose": "5.10.0"
+    },
     "onlyBuiltDependencies": [
       "prisma",
       "@prisma/client",

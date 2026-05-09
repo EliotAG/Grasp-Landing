@@ -29,14 +29,6 @@ import {
   getOrganizationSlackConfig,
 } from "@/lib/slack/integration";
 import {
-  TeamsSendError,
-  sendTeamsMessageByReferenceId,
-} from "@/lib/teams/proactive";
-import {
-  ensureTeamsAppInstalledForEmployee,
-  resolveTeamsReferenceForEmployee,
-} from "@/lib/teams/bootstrap";
-import {
   describeTeamsConfigProblem,
   getOrganizationTeamsConfig,
 } from "@/lib/teams/integration";
@@ -308,6 +300,10 @@ export async function sendReplyOnAllChannels(
     if (teamsProblem) teamsErr = teamsProblem;
 
     if (!teamsProblem) {
+      const {
+        ensureTeamsAppInstalledForEmployee,
+        resolveTeamsReferenceForEmployee,
+      } = await import("@/lib/teams/bootstrap");
       ref = await resolveTeamsReferenceForEmployee(ctx.employee);
       if (!ref) {
         await ensureTeamsAppInstalledForEmployee(ctx.employee);
@@ -317,12 +313,15 @@ export async function sendReplyOnAllChannels(
 
     if (!teamsProblem && ref?.id) {
       try {
+        const { sendTeamsMessageByReferenceId } = await import(
+          "@/lib/teams/proactive"
+        );
         await sendTeamsMessageByReferenceId(ref.id, reply);
         teams = "sent";
       } catch (err) {
         teams = "failed";
         teamsErr =
-          err instanceof TeamsSendError
+          err instanceof Error && err.name === "TeamsSendError"
             ? err.message
             : err instanceof Error
               ? err.message
