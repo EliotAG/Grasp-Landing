@@ -159,13 +159,6 @@ export default async function TeamsSettingsPage() {
           </div>
         ) : (
           <>
-            {teamsConfig.source === "env" ? (
-              <p className="mt-5 rounded-xl border border-amber-200/70 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
-                Using the local env fallback until a workspace config is saved.
-                Saving this form moves the workspace to its own stored config.
-              </p>
-            ) : null}
-
             <div className="mt-6">
               <TeamsConfigForm
                 value={{
