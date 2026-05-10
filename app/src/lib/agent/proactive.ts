@@ -136,7 +136,7 @@ function emptyFailure(reason: string): ProactiveDeliveryResult {
  */
 function formatVerbatimFallback(ctx: AgentContext): string {
   const parts: string[] = [
-    `Hi ${ctx.employee.name.split(" ")[0]} — leadership got back on something you raised.`,
+    `Hi ${ctx.employee.name.split(" ")[0]}, leadership got back on something you raised.`,
     "",
   ];
   for (const r of ctx.pendingLeadershipResponses) {
@@ -147,7 +147,7 @@ function formatVerbatimFallback(ctx: AgentContext): string {
     );
   }
   parts.push(
-    "(This is a verbatim relay — the AI layer is disabled on this Grasp instance, so you're getting the leader's words directly. Reply if anything's unclear.)",
+    "(This is a verbatim relay. The AI layer is disabled on this Grasp instance, so you're getting the leader's words directly. Reply if anything's unclear.)",
   );
   return parts.join("\n");
 }
@@ -234,7 +234,7 @@ async function runProactiveLoop(ctx: AgentContext): Promise<string> {
     });
   }
 
-  return "(I tried to deliver the leadership response but ran out of internal turns — leadership please ping the team directly while I retry.)";
+  return "(I tried to deliver the leadership response but ran out of internal turns. Leadership, please ping the team directly while I retry.)";
 }
 
 export interface ChannelSendResult {

@@ -175,7 +175,7 @@ export async function runAgentTurn(
     // Hit the loop cap without a clean termination. Fall back to a
     // safe acknowledgement so the user isn't left hanging.
     finalText =
-      "Got it — let me come back to you on this. (Hit my internal turn limit; surfacing this as a follow-up.)";
+      "Got it. Let me come back to you on this. (Hit my internal turn limit, so I'll surface this as a follow-up.)";
     await prisma.agentMessage.create({
       data: {
         enrollmentId: context.enrollmentId,

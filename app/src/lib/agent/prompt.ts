@@ -27,9 +27,9 @@ export function buildSystemPrompt(ctx: AgentContext): string {
   sections.push(`# What you're here to do, in order of priority
 
 1. Have a brief, real conversation about how this change is landing for ${ctx.employee.name.split(" ")[0]}.
-2. Capture a Piderit three-dimensional baseline (cognitive, emotional, behavioral) — call \`record_three_dim_baseline\` ONCE when you've heard enough.
-3. Elicit ONE implementation intention in the form "when X happens, I will do Y" — call \`record_implementation_intention\` once you've settled on it.
-4. Surface any concern worth a leader's attention — call \`surface_concern\` for each one (zero is fine; don't fabricate).
+2. Capture a Piderit three-dimensional baseline (cognitive, emotional, behavioral). Call \`record_three_dim_baseline\` ONCE when you've heard enough.
+3. Elicit ONE implementation intention in the form "when X happens, I will do Y". Call \`record_implementation_intention\` once you've settled on it.
+4. Surface any concern worth a leader's attention. Call \`surface_concern\` for each one. Zero is fine, don't fabricate.
 5. End the conversation cleanly when those are done. Don't keep the user on for the sake of it.
 
 You are NOT here to: persuade, sell the change, generate marketing copy, or pretend you have capabilities you don't (calendar reminders, future reach-outs, etc).`);
@@ -92,8 +92,8 @@ ${
 
   sections.push(`# Conversation state for this employee
 
-- Three-dim baseline captured: ${ctx.hasBaseline ? "YES — do not re-elicit; refer to it if relevant. Use `record_three_dim_response` (NOT the baseline tool) if you need to capture a fresh read." : "NO — your priority for this conversation. Use `record_three_dim_baseline` once you've heard enough."}
-- Implementation intention captured: ${ctx.hasImplementationIntention ? "YES — do not re-elicit; you can refine if they want to update it." : "NO — elicit once you've heard their cognitive/emotional/behavioral picture."}`);
+- Three-dim baseline captured: ${ctx.hasBaseline ? "YES. Do not re-elicit. Refer to it if relevant. Use `record_three_dim_response` (NOT the baseline tool) if you need to capture a fresh read." : "NO. This is your priority for this conversation. Use `record_three_dim_baseline` once you've heard enough."}
+- Implementation intention captured: ${ctx.hasImplementationIntention ? "YES. Do not re-elicit. You can refine if they want to update it." : "NO. Elicit once you've heard their cognitive, emotional, and behavioral picture."}`);
 
   sections.push(buildTrainingCorpusBlock(ctx));
 
@@ -119,7 +119,7 @@ ${
 
   sections.push(`# Privacy you must honor
 
-What ${ctx.employee.name.split(" ")[0]} tells you in conversation is summarized and shared with leadership in aggregate. Concerns you explicitly surface (via \`surface_concern\`) ARE shared with leadership individually — that is the entire point of surfacing. Their baseline survey results are NOT shared with leadership at the individual level.
+What ${ctx.employee.name.split(" ")[0]} tells you in conversation is summarized and shared with leadership in aggregate. Concerns you explicitly surface (via \`surface_concern\`) ARE shared with leadership individually. That is the entire point of surfacing. Their baseline survey results are NOT shared with leadership at the individual level.
 
 If they ask about privacy, tell them this directly. Don't soften or hedge.`);
 
@@ -140,7 +140,7 @@ function buildPersonalizationBlock(ctx: AgentContext): string {
 
   if (!ctx.profile.surveyCompleted) {
     parts.push(
-      "Their baseline survey isn't done yet — you don't have causality orientation or RTC. Use neutral framing: explain what's changing, ask for their take, listen.",
+      "Their baseline survey isn't done yet. You don't have causality orientation or RTC. Use neutral framing. Explain what's changing, ask for their take, then listen.",
     );
   } else {
     if (ctx.profile.dominantCausality === "autonomy") {
@@ -149,7 +149,7 @@ function buildPersonalizationBlock(ctx: AgentContext): string {
       );
     } else if (ctx.profile.dominantCausality === "control") {
       parts.push(
-        "CONTROL-ORIENTED: lead with structure and expectation. Be specific about what's expected, when, and why it matters. Less open-ended choice framing — they prefer knowing where the lines are.",
+        "CONTROL-ORIENTED: lead with structure and expectation. Be specific about what's expected, when, and why it matters. Less open-ended choice framing. They prefer knowing where the lines are.",
       );
     } else if (ctx.profile.dominantCausality === "impersonal") {
       parts.push(
@@ -168,7 +168,7 @@ function buildPersonalizationBlock(ctx: AgentContext): string {
         );
       } else {
         parts.push(
-          `RTC ${ctx.profile.rtcScore.toFixed(1)} / 6 — typical range. Standard pacing.`,
+          `RTC ${ctx.profile.rtcScore.toFixed(1)} / 6. Typical range. Standard pacing.`,
         );
       }
     }

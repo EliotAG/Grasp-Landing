@@ -462,7 +462,7 @@ function buildVerbatimAmendmentFallback(
 ): string {
   const firstName = ctx.employee.name.split(" ")[0];
   const credit = amendment.surfacedByEmployee
-    ? `You raised this — leadership updated the rollout in response.\n\n`
+    ? `You raised this. Leadership updated the rollout in response.\n\n`
     : "";
-  return `Hi ${firstName} — leadership pushed an update to the ${ctx.plan.name} rollout: ${amendment.summary}.\n\n${credit}From ${amendment.authorName}:\n${amendment.body}\n\n(This is a verbatim relay — the AI layer is disabled on this Grasp instance, so you're getting the leader's words directly. Reply if anything's unclear or this changes how things land for you.)`;
+  return `Hi ${firstName}, leadership pushed an update to the ${ctx.plan.name} rollout: ${amendment.summary}.\n\n${credit}From ${amendment.authorName}:\n${amendment.body}\n\n(This is a verbatim relay. The AI layer is disabled on this Grasp instance, so you're getting the leader's words directly. Reply if anything's unclear or this changes how things land for you.)`;
 }

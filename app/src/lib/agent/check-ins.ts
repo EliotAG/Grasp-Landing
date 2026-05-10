@@ -351,9 +351,9 @@ function buildVerbatimCheckInFallback(
 ): string {
   const firstName = ctx.employee.name.split(" ")[0];
   const lines: Record<ScheduledCheckInKind, string> = {
-    day_3: `Hey ${firstName} — quick day-3 check on the ${ctx.plan.name} rollout. How's it going so far? Even one specific moment from the last couple days helps.`,
-    week_1: `Hey ${firstName} — checking in a week into the ${ctx.plan.name} rollout. What's a recent moment where the new behavior either fit the workflow or didn't? No need for a status report.`,
-    week_3: `Hey ${firstName} — three weeks into the ${ctx.plan.name} rollout. Does this feel different now than it did at the start? Anything you'd push back on or refine?`,
+    day_3: `Hey ${firstName}, quick day-3 check on the ${ctx.plan.name} rollout. How's it going so far? Even one specific moment from the last couple of days helps.`,
+    week_1: `Hey ${firstName}, checking in a week into the ${ctx.plan.name} rollout. What's a recent moment where the new behavior either fit the workflow or didn't? No need for a status report.`,
+    week_3: `Hey ${firstName}, three weeks into the ${ctx.plan.name} rollout. Does this feel different now than it did at the start? Anything you'd push back on or refine?`,
   };
-  return `${lines[kind]}\n\n(This is a verbatim relay — the AI layer is disabled on this Grasp instance, so the message is template-only. Reply if anything's worth talking through.)`;
+  return `${lines[kind]}\n\n(This is a verbatim relay. The AI layer is disabled on this Grasp instance, so the message is template-only. Reply if anything's worth talking through.)`;
 }
