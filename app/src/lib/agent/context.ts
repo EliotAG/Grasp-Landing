@@ -239,6 +239,11 @@ export interface LoadAgentContextOptions {
   /// Set by the scheduled check-in runner so the agent knows which
   /// check-in is in flight (drives snapshot kind + prompt seed).
   activeCheckIn?: ActiveCheckIn;
+  /// Pin the context load to one specific enrollment instead of the
+  /// "most recently activated active plan" default. Used by the
+  /// inbound-message router when it has explicitly chosen which
+  /// rollout an ambiguous message belongs to.
+  enrollmentId?: string;
 }
 
 /**
@@ -251,6 +256,122 @@ export interface LoadAgentContextOptions {
  * (sequential rollouts is the v1 default per the spec, but data-wise
  * nothing prevents overlap).
  */
+/**
+ * Lightweight per-enrollment summary for the inbound message router.
+ *
+ * Built for the case where one employee is enrolled in multiple
+ * active change plans simultaneously. The router needs enough context
+ * to disambiguate which rollout a user's ambiguous message refers to,
+ * but NOT the full prompt-building payload that `loadAgentContext`
+ * assembles. Keeping this tight matters because we send N of these
+ * to a small Claude call on every multi-rollout inbound message.
+ */
+export interface ActiveEnrollmentSummary {
+  enrollmentId: string;
+  changePlanId: string;
+  planName: string;
+  /// Two-sentence summary the planner authored at announcement time.
+  planSummary: string | null;
+  /// One-line "the actual behavior we want" anchor. Distinguishing
+  /// signal when two plans share generic names like "Q3 rollout".
+  coreMechanism: string | null;
+  kickoffDate: Date | null;
+  targetDate: Date | null;
+  /// Stakeholder group label this employee belongs to on this plan.
+  /// Helps the router infer rollout scope ("Sales managers" vs
+  /// "Engineering ICs") from terms in the user's message.
+  stakeholderGroupName: string | null;
+  /// Snippet of the most recent agent message in this enrollment's
+  /// transcript (any role). Capped to a short preview so the router
+  /// has recency context without ballooning the prompt.
+  lastMessagePreview: string | null;
+  lastMessageAt: Date | null;
+}
+
+const LAST_MESSAGE_PREVIEW_CHARS = 240;
+
+export async function loadActiveEnrollmentSummariesByEmployeeId(
+  employeeId: string,
+): Promise<ActiveEnrollmentSummary[]> {
+  const enrollments = await prisma.changeEnrollment.findMany({
+    where: {
+      employeeId,
+      changePlan: { status: "active" },
+    },
+    orderBy: { changePlan: { activatedAt: "desc" } },
+    include: {
+      changePlan: {
+        select: {
+          id: true,
+          name: true,
+          summary: true,
+          coreMechanism: true,
+          kickoffDate: true,
+          targetDate: true,
+          stakeholderGroups: {
+            include: {
+              members: {
+                where: { employeeId },
+                select: { employeeId: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  if (enrollments.length === 0) return [];
+
+  // One small query per enrollment to pull the freshest message
+  // preview. We don't `groupBy` because we need the actual content
+  // string, not just metadata, and the per-employee enrollment fan-out
+  // is small (typically 1–3) at MLP volume.
+  const summaries = await Promise.all(
+    enrollments.map(async (e) => {
+      const lastMsg = await prisma.agentMessage.findFirst({
+        where: { enrollmentId: e.id },
+        orderBy: { createdAt: "desc" },
+        select: { content: true, createdAt: true, role: true },
+      });
+      const memberGroup = e.changePlan.stakeholderGroups.find(
+        (g) => g.members.length > 0,
+      );
+      return {
+        enrollmentId: e.id,
+        changePlanId: e.changePlan.id,
+        planName: e.changePlan.name,
+        planSummary: e.changePlan.summary,
+        coreMechanism: e.changePlan.coreMechanism,
+        kickoffDate: e.changePlan.kickoffDate,
+        targetDate: e.changePlan.targetDate,
+        stakeholderGroupName: memberGroup?.name ?? null,
+        lastMessagePreview: lastMsg
+          ? truncatePreview(lastMsg.content, LAST_MESSAGE_PREVIEW_CHARS)
+          : null,
+        lastMessageAt: lastMsg?.createdAt ?? null,
+      } satisfies ActiveEnrollmentSummary;
+    }),
+  );
+  return summaries;
+}
+
+export async function loadActiveEnrollmentSummariesByEmail(
+  email: string,
+): Promise<ActiveEnrollmentSummary[]> {
+  const employee = await prisma.employee.findFirst({
+    where: { email: { equals: email, mode: "insensitive" } },
+    select: { id: true },
+  });
+  if (!employee) return [];
+  return loadActiveEnrollmentSummariesByEmployeeId(employee.id);
+}
+
+function truncatePreview(text: string, max: number): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max - 1).trimEnd()}…`;
+}
+
 export async function loadAgentContextByEmail(
   email: string,
   options: LoadAgentContextOptions = {},
@@ -301,27 +422,59 @@ async function loadAgentContextForEmployee(
   },
   options: LoadAgentContextOptions,
 ): Promise<AgentContext | null> {
-  const enrollment = await prisma.changeEnrollment.findFirst({
-    where: {
-      employeeId: employee.id,
-      changePlan: { status: "active" },
-    },
-    orderBy: { changePlan: { activatedAt: "desc" } },
-    include: {
-      response: true,
-      changePlan: {
+  // When `enrollmentId` is pinned, look up that specific enrollment
+  // (and confirm the plan is still active and belongs to this
+  // employee). Otherwise pick the most recently activated active plan
+  // — the legacy default for users with at most one rollout.
+  const enrollment = options.enrollmentId
+    ? await prisma.changeEnrollment.findFirst({
+        where: {
+          id: options.enrollmentId,
+          employeeId: employee.id,
+          changePlan: { status: "active" },
+        },
         include: {
-          organization: { select: { name: true } },
-          stakeholderGroups: {
+          response: true,
+          changePlan: {
             include: {
-              members: { where: { employeeId: employee.id }, select: { employeeId: true } },
+              organization: { select: { name: true } },
+              stakeholderGroups: {
+                include: {
+                  members: {
+                    where: { employeeId: employee.id },
+                    select: { employeeId: true },
+                  },
+                },
+                orderBy: { createdAt: "asc" },
+              },
             },
-            orderBy: { createdAt: "asc" },
           },
         },
-      },
-    },
-  });
+      })
+    : await prisma.changeEnrollment.findFirst({
+        where: {
+          employeeId: employee.id,
+          changePlan: { status: "active" },
+        },
+        orderBy: { changePlan: { activatedAt: "desc" } },
+        include: {
+          response: true,
+          changePlan: {
+            include: {
+              organization: { select: { name: true } },
+              stakeholderGroups: {
+                include: {
+                  members: {
+                    where: { employeeId: employee.id },
+                    select: { employeeId: true },
+                  },
+                },
+                orderBy: { createdAt: "asc" },
+              },
+            },
+          },
+        },
+      });
   if (!enrollment) return null;
 
   const allGroups: AgentStakeholderGroup[] = enrollment.changePlan.stakeholderGroups.map(

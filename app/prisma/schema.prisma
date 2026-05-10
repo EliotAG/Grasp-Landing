@@ -488,6 +488,28 @@ model TeamsConversationReference {
   /// for spotting stale references before a send.
   lastActivityAt  DateTime @default(now()) @map("last_activity_at")
 
+  /// Currently "routed" change enrollment for this 1:1 thread.
+  /// Set when:
+  ///   - The classifier picks an enrollment with high confidence.
+  ///   - The user explicitly disambiguates between candidates.
+  ///   - A proactive message tied to a specific enrollment is sent.
+  /// Read by the inbound message handler to bias the next reply
+  /// back to the same enrollment within the stickiness TTL — so a
+  /// chain of replies stays scoped to one rollout without
+  /// re-classifying every turn.
+  routedEnrollmentId  String?   @map("routed_enrollment_id") @db.Uuid
+  /// Wall-clock when `routedEnrollmentId` was last set. The handler
+  /// applies a stickiness TTL (~24h) and re-classifies after that.
+  routedEnrollmentAt  DateTime? @map("routed_enrollment_at")
+
+  /// Set the first time the bot sent its self-introduction in this
+  /// 1:1 thread. Both `installationUpdate.add` and the legacy
+  /// `conversationUpdate.membersAdded` path race to send the intro on
+  /// install; this stamp is the once-only gate so the user doesn't
+  /// receive duplicate welcomes (and so a re-install eventually
+  /// reaches a fresh row with this field null and re-greets cleanly).
+  welcomeSentAt       DateTime? @map("welcome_sent_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt        @map("updated_at")
 
@@ -496,6 +518,7 @@ model TeamsConversationReference {
   @@index([organizationId])
   @@index([employeeId])
   @@index([tenantId])
+  @@index([routedEnrollmentId])
   @@map("teams_conversation_reference")
 }
 

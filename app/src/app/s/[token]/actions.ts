@@ -35,7 +35,12 @@ export async function submitBaselineSurvey(
 ): Promise<SubmitResult> {
   const enrollment = await prisma.changeEnrollment.findUnique({
     where: { surveyToken: token },
-    select: { id: true, surveyStatus: true, changePlanId: true },
+    select: {
+      id: true,
+      surveyStatus: true,
+      changePlanId: true,
+      employeeId: true,
+    },
   });
   if (!enrollment) return { ok: false, error: "Survey link not recognized." };
   if (enrollment.surveyStatus === BaselineSurveyStatus.completed) {
@@ -92,6 +97,43 @@ export async function submitBaselineSurvey(
         surveyCompletedAt: new Date(),
       },
     });
+
+    // Propagate to sibling enrollments — survey-once across rollouts.
+    // If a kickoff dispatcher fanned out 2+ DMs in parallel and both
+    // landed survey links before the user filled any, the user only
+    // needs to fill ONE; we replicate the answers onto the others so
+    // their /s/[token] pages also show the thank-you state and the
+    // agent's per-enrollment profile lookup picks up the personalization.
+    //
+    // Only enrollments that don't already have a response are touched,
+    // so a later submit on a different token doesn't clobber a
+    // response that was filled out independently in between.
+    const siblings = await tx.changeEnrollment.findMany({
+      where: {
+        employeeId: enrollment.employeeId,
+        id: { not: enrollment.id },
+        response: { is: null },
+      },
+      select: { id: true },
+    });
+    for (const sibling of siblings) {
+      await tx.baselineSurveyResponse.create({
+        data: {
+          enrollmentId: sibling.id,
+          oregRtc: oreg,
+          causalityOrientation: causality,
+          workingPreferences,
+          priorChangeExperience,
+        },
+      });
+      await tx.changeEnrollment.update({
+        where: { id: sibling.id },
+        data: {
+          surveyStatus: BaselineSurveyStatus.completed,
+          surveyCompletedAt: new Date(),
+        },
+      });
+    }
   });
 
   // The leadership status panel relies on this for live counts.

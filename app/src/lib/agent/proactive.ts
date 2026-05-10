@@ -316,7 +316,9 @@ export async function sendReplyOnAllChannels(
         const { sendTeamsMessageByReferenceId } = await import(
           "@/lib/teams/proactive"
         );
-        await sendTeamsMessageByReferenceId(ref.id, reply);
+        await sendTeamsMessageByReferenceId(ref.id, reply, {
+          enrollmentId: ctx.enrollmentId,
+        });
         teams = "sent";
       } catch (err) {
         teams = "failed";

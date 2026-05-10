@@ -16,7 +16,7 @@
  * conversation reference doesn't take down the rest of the batch.
  */
 
-import { ChangeEnrollmentKickoffStatus } from "@prisma/client";
+import { ChangeEnrollmentKickoffStatus, Prisma } from "@prisma/client";
 
 import {
   absoluteAppUrl,
@@ -279,6 +279,16 @@ interface DmContext {
   } | null;
 }
 
+/**
+ * `renderKickoffDm` takes the static plan context plus a runtime
+ * `hasPriorSurvey` flag computed by `reusePriorSurveyIfPresent`. The
+ * flag is intentionally NOT part of `DmContext` because callers
+ * upstream only know plan-level facts; whether a particular employee
+ * has already filled the baseline is an employee-level lookup that
+ * must run inside `sendOne`.
+ */
+type DmRenderContext = DmContext & { hasPriorSurvey: boolean };
+
 async function sendOne(
   enrollmentId: string,
   employee: {
@@ -293,7 +303,19 @@ async function sendOne(
   },
   ctx: DmContext,
 ): Promise<"sent" | "skipped_no_bot" | "failed"> {
-  const body = renderKickoffDm(ctx);
+  // Survey-once: an employee enrolled in multiple rollouts shouldn't
+  // re-fill the baseline. If they already completed the survey on any
+  // sibling enrollment, copy that response onto this enrollment (so
+  // the agent's per-enrollment profile lookup still works), mark this
+  // enrollment's surveyStatus completed, and render a DM body that
+  // omits the survey link block entirely. We do this BEFORE rendering
+  // the DM so the body reflects the truth.
+  const reusedSurvey = await reusePriorSurveyIfPresent(
+    employee.id,
+    enrollmentId,
+  );
+
+  const body = renderKickoffDm({ ...ctx, hasPriorSurvey: reusedSurvey });
 
   // Mirror to the simulator (parallel channel). We AWAIT the result so
   // we can record whether the simulator actually accepted the DM — that
@@ -415,7 +437,7 @@ async function sendOne(
   }
 
   try {
-    await sendTeamsMessageByReferenceId(ref.id, body);
+    await sendTeamsMessageByReferenceId(ref.id, body, { enrollmentId });
     await prisma.changeEnrollment.update({
       where: { id: enrollmentId },
       data: {
@@ -446,7 +468,7 @@ async function sendOne(
   }
 }
 
-function renderKickoffDm(ctx: DmContext): string {
+function renderKickoffDm(ctx: DmRenderContext): string {
   const surveyUrl = absoluteAppUrl(appBaseUrl(), `/s/${ctx.surveyToken}`);
   const announcement = (ctx.announcement ?? "").trim();
   const cadenceLine = ctx.responseCadenceHours
@@ -473,18 +495,106 @@ function renderKickoffDm(ctx: DmContext): string {
       "",
       `Join link: ${ctx.voice.meetingUrl}`,
       "",
-      `In the meantime, I'd like to learn a bit about how you work and how you tend to experience change. It takes about 3 minutes and the answers stay between us. I use them to tailor how I check in with you.`,
+    );
+    if (!ctx.hasPriorSurvey) {
+      lines.push(
+        "In the meantime, I'd like to learn a bit about how you work and how you tend to experience change. It takes about 3 minutes and the answers stay between us. I use them to tailor how I check in with you.",
+        "",
+        surveyUrl,
+      );
+    } else {
+      // Returning employee — survey is already on file. Don't re-ask.
+      lines.push(
+        "I already have your answers from the last rollout, so no survey this time. I'll lean on what you told me before to tailor how we check in.",
+      );
+    }
+  } else if (!ctx.hasPriorSurvey) {
+    lines.push(
+      "Before we get going, I'd like to learn a bit about how you work and how you tend to experience change. It takes about 3 minutes and the answers stay between us. I use them to tailor how I check in with you.",
       "",
       surveyUrl,
     );
   } else {
+    // No voice block, no survey link — give the DM a clean closing
+    // beat instead of ending on the cadence line.
     lines.push(
-      `Before we get going, I'd like to learn a bit about how you work and how you tend to experience change. It takes about 3 minutes and the answers stay between us. I use them to tailor how I check in with you.`,
-      "",
-      surveyUrl,
+      "I already have your answers from the last rollout, so no survey this time. I'll be in touch shortly to talk through how this one is landing for you.",
     );
   }
 
   return lines.join("\n");
+}
+
+/**
+ * If the employee has already completed a baseline survey for a
+ * sibling enrollment (any prior change plan in this org), copy that
+ * response onto the current enrollment and mark its `surveyStatus`
+ * completed. Returns true when a prior response was reused, false
+ * otherwise.
+ *
+ * Why copy instead of falling back at read time:
+ *   - `BaselineSurveyResponse.enrollmentId` is `@unique`, so the row
+ *     is a per-enrollment artifact. The agent's context loader and
+ *     leadership status panel both expect the row to exist on the
+ *     enrollment they're inspecting; an at-read fallback would have
+ *     to be threaded through every consumer.
+ *   - The response is JSON-shaped, immutable post-submit, and small
+ *     (a few KB). Copying it is cheap and keeps consumers ignorant of
+ *     cross-enrollment fallback logic.
+ *
+ * We only copy when this enrollment doesn't already have a response,
+ * to keep idempotency on resends.
+ */
+async function reusePriorSurveyIfPresent(
+  employeeId: string,
+  enrollmentId: string,
+): Promise<boolean> {
+  const current = await prisma.baselineSurveyResponse.findUnique({
+    where: { enrollmentId },
+    select: { id: true },
+  });
+  if (current) return true;
+
+  // Most-recent prior response for this employee on any of their
+  // other enrollments. We deliberately DO NOT scope by org here —
+  // an employee record is org-scoped already, so all their
+  // enrollments are within the same organization.
+  const prior = await prisma.baselineSurveyResponse.findFirst({
+    where: {
+      enrollment: {
+        employeeId,
+        id: { not: enrollmentId },
+      },
+    },
+    orderBy: { submittedAt: "desc" },
+    select: {
+      oregRtc: true,
+      causalityOrientation: true,
+      workingPreferences: true,
+      priorChangeExperience: true,
+    },
+  });
+  if (!prior) return false;
+
+  await prisma.$transaction([
+    prisma.baselineSurveyResponse.create({
+      data: {
+        enrollmentId,
+        oregRtc: prior.oregRtc as Prisma.InputJsonValue,
+        causalityOrientation: prior.causalityOrientation as Prisma.InputJsonValue,
+        workingPreferences: prior.workingPreferences as Prisma.InputJsonValue,
+        priorChangeExperience: prior.priorChangeExperience as Prisma.InputJsonValue,
+      },
+    }),
+    prisma.changeEnrollment.update({
+      where: { id: enrollmentId },
+      data: {
+        surveyStatus: "completed",
+        surveyCompletedAt: new Date(),
+      },
+    }),
+  ]);
+
+  return true;
 }
 

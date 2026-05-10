@@ -37,6 +37,15 @@ export interface ProactiveSendOptions {
    * which is how the kickoff DM ships an .ics calendar invite.
    */
   attachments?: Attachment[];
+  /**
+   * The enrollment this proactive message is tied to, when known
+   * (kickoff DMs, scheduled check-ins, leadership-response relays
+   * all have one). Persisted onto the conversation reference's
+   * `routedEnrollmentId` so the next inbound message in this thread
+   * is biased toward the same rollout — without us having to ask
+   * the user "which one?" when they reply to a Day-3 nudge.
+   */
+  enrollmentId?: string;
 }
 
 export async function sendTeamsMessageByReferenceId(
@@ -56,6 +65,7 @@ export async function sendTeamsMessageByReferenceId(
     text,
     options,
   );
+  await markRoutedEnrollment(ref.id, options?.enrollmentId);
 }
 
 export async function sendTeamsMessageByAadObjectId(
@@ -77,6 +87,21 @@ export async function sendTeamsMessageByAadObjectId(
     text,
     options,
   );
+  await markRoutedEnrollment(ref.id, options?.enrollmentId);
+}
+
+async function markRoutedEnrollment(
+  referenceId: string,
+  enrollmentId: string | undefined,
+): Promise<void> {
+  if (!enrollmentId) return;
+  await prisma.teamsConversationReference.update({
+    where: { id: referenceId },
+    data: {
+      routedEnrollmentId: enrollmentId,
+      routedEnrollmentAt: new Date(),
+    },
+  });
 }
 
 async function inferReferenceOrganizationId(ref: {
