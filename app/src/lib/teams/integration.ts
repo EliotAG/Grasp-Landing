@@ -138,6 +138,14 @@ export async function getTeamsConfigByMicrosoftAppId(
   return row ? fromRow(row) : null;
 }
 
+export async function getSingleEnabledTeamsConfig(): Promise<OrganizationTeamsConfig | null> {
+  const rows = await prisma.organizationTeamsIntegration.findMany({
+    where: { enabled: true },
+    take: 2,
+  });
+  return rows.length === 1 ? fromRow(rows[0]) : null;
+}
+
 export function getEnvTeamsConfig(): OrganizationTeamsConfig {
   return envConfig(null);
 }

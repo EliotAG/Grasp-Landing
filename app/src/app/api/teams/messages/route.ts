@@ -20,13 +20,13 @@
 import type { NextRequest } from "next/server";
 import { authorizeJWT } from "@microsoft/agents-hosting";
 
-import { getTeamsAdapter, getTeamsAdapterForAuthConfig } from "@/lib/teams/adapter";
+import { getTeamsAdapterForAuthConfig } from "@/lib/teams/adapter";
 import { getTeamsAgent } from "@/lib/teams/agent";
+import { getTeamsAuthConfigForCredentials } from "@/lib/teams/auth-config";
 import {
-  getTeamsAuthConfig,
-  getTeamsAuthConfigForCredentials,
-} from "@/lib/teams/auth-config";
-import { getTeamsConfigByMicrosoftAppId } from "@/lib/teams/integration";
+  getSingleEnabledTeamsConfig,
+  getTeamsConfigByMicrosoftAppId,
+} from "@/lib/teams/integration";
 
 export const runtime = "nodejs";
 // Each Teams activity is independent; no caching, always fresh.
@@ -115,11 +115,20 @@ export async function POST(req: NextRequest): Promise<Response> {
   };
 
   const organizationConfig = await resolveAuthConfigForRequest(req);
+  if (!organizationConfig) {
+    console.error("[teams] no enabled organization Teams config matched request");
+    return new Response(
+      JSON.stringify({
+        error: "No enabled organization Teams config matched this request.",
+      }),
+      { status: 503, headers: { "content-type": "application/json" } },
+    );
+  }
 
   // 1. Validate the inbound JWT. authorizeJWT writes 401 directly to
   //    fakeRes on failure (and never calls next), which resolves the
   //    response promise via our shim. On success it stamps req.user.
-  const authConfig = organizationConfig?.authConfig ?? getTeamsAuthConfig();
+  const authConfig = organizationConfig.authConfig;
   let jwtFailed = false;
   await new Promise<void>((resolve) => {
     authorizeJWT(authConfig)(
@@ -142,9 +151,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   // 2. Hand the activity to the adapter, which dispatches into the
   //    AgentApplication via `agent.run(turnContext)`.
   try {
-    const adapter = organizationConfig
-      ? getTeamsAdapterForAuthConfig(organizationConfig.authConfig)
-      : getTeamsAdapter();
+    const adapter = getTeamsAdapterForAuthConfig(organizationConfig.authConfig);
     const agent = getTeamsAgent();
     await adapter.process(
       fakeReq as unknown as Parameters<typeof adapter.process>[0],
@@ -173,18 +180,24 @@ export async function POST(req: NextRequest): Promise<Response> {
 async function resolveAuthConfigForRequest(
   req: NextRequest,
 ): Promise<{ authConfig: ReturnType<typeof getTeamsAuthConfigForCredentials> } | null> {
-  const appId = readAppIdFromBearer(req.headers.get("authorization"));
-  if (!appId) return null;
-  const config = await getTeamsConfigByMicrosoftAppId(appId);
+  const appIds = readAppIdsFromBearer(req.headers.get("authorization"));
+  for (const appId of appIds) {
+    const config = await getTeamsConfigByMicrosoftAppId(appId);
+    if (config?.credentials) {
+      return { authConfig: getTeamsAuthConfigForCredentials(config.credentials) };
+    }
+  }
+
+  const config = await getSingleEnabledTeamsConfig();
   if (!config?.credentials) return null;
   return { authConfig: getTeamsAuthConfigForCredentials(config.credentials) };
 }
 
-function readAppIdFromBearer(header: string | null): string | null {
+function readAppIdsFromBearer(header: string | null): string[] {
   const token = header?.match(/^Bearer\s+(.+)$/i)?.[1];
-  if (!token) return null;
+  if (!token) return [];
   const [, payload] = token.split(".");
-  if (!payload) return null;
+  if (!payload) return [];
 
   try {
     const json = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
@@ -192,17 +205,23 @@ function readAppIdFromBearer(header: string | null): string | null {
       appid?: unknown;
       azp?: unknown;
     };
-    return firstString(json.aud, json.appid, json.azp) ?? null;
+    return uniqueStrings(json.aud, json.appid, json.azp);
   } catch {
-    return null;
+    return [];
   }
 }
 
-function firstString(...values: unknown[]): string | undefined {
-  return values.find(
-    (value): value is string =>
-      typeof value === "string" && value.trim().length > 0,
-  )?.trim();
+function uniqueStrings(...values: unknown[]): string[] {
+  return [
+    ...new Set(
+      values
+        .filter(
+          (value): value is string =>
+            typeof value === "string" && value.trim().length > 0,
+        )
+        .map((value) => value.trim()),
+    ),
+  ];
 }
 
 // GET is handy as a liveness probe when registering the endpoint:
