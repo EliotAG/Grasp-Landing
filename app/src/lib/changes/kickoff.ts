@@ -491,7 +491,7 @@ function renderKickoffDm(ctx: DmRenderContext): string {
     lines.push(
       `I've also put a voice kickoff on your calendar for ${formatVoiceSlot(
         ctx.voice.scheduledFor,
-      )} — check your Outlook for the meeting invite (you can Accept or Decline there). I'll join the meeting at that time and we can talk through the change live.`,
+      )}. Check your Outlook for the meeting invite (you can Accept or Decline there). I'll join at that time and we can talk through the change live.`,
       "",
       `Join link: ${ctx.voice.meetingUrl}`,
       "",
