@@ -204,7 +204,7 @@ export async function scheduleVoiceCallsForPlan(
     try {
       const start = row.scheduledFor;
       const end = new Date(start.getTime() + durationMin * 60_000);
-      const subject = `Grasp kickoff — ${plan.name}`;
+      const subject = `Grasp kickoff: ${plan.name}`;
 
       // 1. Create the unique Teams meeting on the organizer's
       //    calendar (the activator). Returns the join URL we
@@ -289,7 +289,7 @@ function renderInviteBody(input: {
     `<p>This is a ${input.durationMin}-minute voice kickoff for the &quot;${escapeHtml(input.planName)}&quot; rollout. Grasp will join the Teams meeting at the start time to talk you through the change live. The conversation gets summarized back into your Grasp thread when we&rsquo;re done.</p>`,
     summary,
     `<p><a href="${escapeAttr(input.joinUrl)}">Join the Teams meeting</a></p>`,
-    `<p style="color:#666;font-size:12px">If you can&rsquo;t make this slot, just decline this invite — you&rsquo;ll still get the regular Grasp text DM with the announcement and survey link.</p>`,
+    `<p style="color:#666;font-size:12px">If you can&rsquo;t make this slot, just decline this invite. You&rsquo;ll still get the regular Grasp text DM with the announcement and survey link.</p>`,
   ].join("");
 }
 

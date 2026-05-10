@@ -149,7 +149,7 @@ export async function handleSlackEnvelope(
       await postSlackMessage(
         config.credentials,
         event.channel,
-        "Thanks — there isn't an active change rollout that includes you right now, so I'm just standing by. I'll be in touch when leadership kicks off the next one.",
+        "Thanks. There isn't an active change rollout that includes you right now, so I'm just standing by. I'll be in touch when leadership kicks off the next one.",
       );
       return new Response(null, { status: 200 });
     }
@@ -166,7 +166,7 @@ export async function handleSlackEnvelope(
       await postSlackMessage(
         config.credentials,
         event.channel,
-        "I hit an error on my side processing that — try again in a moment, and if it keeps happening flag it to the leadership team.",
+        "I hit an error on my side processing that. Try again in a moment, and if it keeps happening, flag it to the leadership team.",
       ).catch((sendErr) => {
         console.error("[slack] error reply failed", sendErr);
       });

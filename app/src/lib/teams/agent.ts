@@ -92,7 +92,7 @@ export function getTeamsAgent(): AgentApplication<TurnState> {
     const text = context.activity.text?.trim() ?? "";
     if (!text) {
       await context.sendActivity(
-        MessageFactory.text("Got an empty message — try sending some text."),
+        MessageFactory.text("Got an empty message. Try sending some text."),
       );
       return;
     }
@@ -125,7 +125,7 @@ export function getTeamsAgent(): AgentApplication<TurnState> {
     if (enrollments.length === 0) {
       await context.sendActivity(
         MessageFactory.text(
-          "Thanks — there isn't an active change rollout that includes you right now, so I'm just standing by. I'll be in touch when leadership kicks off the next one.",
+          "Thanks. There isn't an active change rollout that includes you right now, so I'm just standing by. I'll be in touch when leadership kicks off the next one.",
         ),
       );
       return;
@@ -190,7 +190,7 @@ export function getTeamsAgent(): AgentApplication<TurnState> {
     if (!ctx) {
       await context.sendActivity(
         MessageFactory.text(
-          "Thanks — I lost track of which rollout this is for. Could you say which change you mean?",
+          "Thanks. I lost track of which rollout this is for. Could you say which change you mean?",
         ),
       );
       return;
@@ -207,7 +207,7 @@ export function getTeamsAgent(): AgentApplication<TurnState> {
       console.error("[teams] agent turn failed", err);
       await context.sendActivity(
         MessageFactory.text(
-          "I hit an error on my side processing that — try again in a moment, and if it keeps happening flag it to the leadership team.",
+          "I hit an error on my side processing that. Try again in a moment, and if it keeps happening, flag it to the leadership team.",
         ),
       );
     }
@@ -354,12 +354,12 @@ async function sendIntroIfNew(context: TurnContext): Promise<void> {
 }
 
 function buildIntroMessage(): string {
-  // Plain prose, no markdown — Teams DM conventions per the agent
-  // tone guide. Two short paragraphs: who I am + why I'm here, and
-  // what to expect next.
+  // Plain prose, no markdown, no em dashes. Teams DM conventions per
+  // the agent tone guide. Two short paragraphs: who I am, and what
+  // to expect next.
   return [
-    "Hi — I'm Grasp. I'm an AI agent your leadership team uses to help land internal changes well. When there's a rollout that affects you, I'll DM you to share what's happening, hear how it's actually landing for you, and pass real concerns up to leadership so they can respond.",
-    "Anything you tell me is summarized into aggregate signal for leadership; specific concerns I surface get sent up with attribution because that's the whole point of surfacing them. I'll tell you which mode we're in. If there's no active rollout for you right now I'll just stand by — you'll hear from me when leadership kicks the next one off.",
+    "Hi, I'm Grasp. Your leadership team uses me to help land internal changes well. When a rollout affects you, I'll DM to share what's happening and hear how it's landing. I pass real concerns up so leadership can respond.",
+    "What you tell me gets summarized into aggregate signal. Concerns I surface go up with attribution. That's the point. I'll tell you which mode we're in. No active rollout for you right now, so I'll stand by until leadership starts the next one.",
   ].join("\n\n");
 }
 
@@ -426,7 +426,7 @@ function buildDisambiguationPrompt(
 ): string {
   const labels = candidates.map((c) => describeCandidate(c));
   if (labels.length === 2) {
-    return `Quick check before I jump in — which rollout are you asking about: ${labels[0]} or ${labels[1]}? A few words is plenty.`;
+    return `Quick check before I jump in. Which rollout are you asking about: ${labels[0]} or ${labels[1]}? A few words is plenty.`;
   }
   const last = labels[labels.length - 1];
   const head = labels.slice(0, -1).join(", ");
