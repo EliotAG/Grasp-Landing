@@ -32,6 +32,9 @@ export const runtime = "nodejs";
 // Each Teams activity is independent; no caching, always fresh.
 export const dynamic = "force-dynamic";
 
+const AUTH_TIMEOUT_MS = 10_000;
+const TURN_TIMEOUT_MS = 55_000;
+
 // Express-ish shapes that the SDK expects. Kept narrow on purpose so
 // we don't pretend to implement more of the Express API than we use.
 type ExpressLikeReq = {
@@ -130,19 +133,28 @@ export async function POST(req: NextRequest): Promise<Response> {
   //    response promise via our shim. On success it stamps req.user.
   const authConfig = organizationConfig.authConfig;
   let jwtFailed = false;
-  await new Promise<void>((resolve) => {
-    authorizeJWT(authConfig)(
-      fakeReq as unknown as Parameters<ReturnType<typeof authorizeJWT>>[0],
-      fakeRes as unknown as Parameters<ReturnType<typeof authorizeJWT>>[1],
-      ((err?: unknown) => {
-        if (err) {
-          jwtFailed = true;
-          console.error("[teams] authorizeJWT error:", err);
-        }
-        resolve();
-      }) as unknown as Parameters<ReturnType<typeof authorizeJWT>>[2],
-    );
-  });
+  const authCompleted = await withTimeout(
+    new Promise<"ok">((resolve) => {
+      authorizeJWT(authConfig)(
+        fakeReq as unknown as Parameters<ReturnType<typeof authorizeJWT>>[0],
+        fakeRes as unknown as Parameters<ReturnType<typeof authorizeJWT>>[1],
+        ((err?: unknown) => {
+          if (err) {
+            jwtFailed = true;
+            console.error("[teams] authorizeJWT error:", err);
+          }
+          resolve("ok");
+        }) as unknown as Parameters<ReturnType<typeof authorizeJWT>>[2],
+      );
+    }),
+    AUTH_TIMEOUT_MS,
+    "timeout",
+  );
+
+  if (authCompleted === "timeout") {
+    console.error("[teams] authorizeJWT timed out");
+    return new Response("Teams auth timed out", { status: 504 });
+  }
 
   if (responded || jwtFailed) {
     return responsePromise;
@@ -153,13 +165,34 @@ export async function POST(req: NextRequest): Promise<Response> {
   try {
     const adapter = getTeamsAdapterForAuthConfig(organizationConfig.authConfig);
     const agent = getTeamsAgent();
-    await adapter.process(
+    const processPromise = adapter.process(
       fakeReq as unknown as Parameters<typeof adapter.process>[0],
       fakeRes as unknown as Parameters<typeof adapter.process>[1],
       async (context) => {
         await agent.run(context);
       },
     );
+
+    const outcome = await Promise.race([
+      responsePromise.then((response) => ({ kind: "response" as const, response })),
+      processPromise.then(() => ({ kind: "done" as const })),
+      delay(TURN_TIMEOUT_MS).then(() => ({ kind: "timeout" as const })),
+    ]);
+
+    if (outcome.kind === "response") {
+      processPromise.catch((err) => {
+        console.error("[teams] adapter.process failed after response:", err);
+      });
+      return outcome.response;
+    }
+
+    if (outcome.kind === "timeout") {
+      console.error("[teams] adapter.process timed out");
+      processPromise.catch((err) => {
+        console.error("[teams] adapter.process failed after timeout:", err);
+      });
+      return new Response(null, { status: 202 });
+    }
   } catch (err) {
     console.error("[teams] adapter.process threw:", err);
     if (!responded) {
@@ -222,6 +255,18 @@ function uniqueStrings(...values: unknown[]): string[] {
         .map((value) => value.trim()),
     ),
   ];
+}
+
+async function withTimeout<T, U>(
+  promise: Promise<T>,
+  ms: number,
+  timeoutValue: U,
+): Promise<T | U> {
+  return Promise.race([promise, delay(ms).then(() => timeoutValue)]);
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // GET is handy as a liveness probe when registering the endpoint:
