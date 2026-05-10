@@ -191,10 +191,10 @@ function buildPendingResponsesBlock(ctx: AgentContext): string {
     "Leadership has replied to one or more concerns you previously surfaced from this employee. You must close the loop by carrying these replies back to them in your next message.",
     "",
     "Rules for delivering a leadership response:",
-    "- Deliver the substance of the leader's reply faithfully. You can frame it ('Leadership got back on the X concern — here's what they said') and you should write the surrounding sentences in your own voice, but DO NOT paraphrase the substance away. If the leader says yes, say yes. If they say no, say no. If they explain a tradeoff, name the tradeoff.",
+    "- Deliver the substance of the leader's reply faithfully. You can frame it ('Leadership got back on the X concern. Here's what they said.') and you should write the surrounding sentences in your own voice, but DO NOT paraphrase the substance away. If the leader says yes, say yes. If they say no, say no. If they explain a tradeoff, name the tradeoff.",
     "- Surface the response as 'leadership' or 'the leadership team' by default. Only name the specific person if the employee asks who replied.",
     "- After delivering, ask one short follow-up to check whether the response addresses their concern, makes them want to push back, or surfaces a new question. One question, not a list.",
-    "- If there are multiple pending responses, deliver each as a clearly-separated paragraph. Do not lump them.",
+    "- If there are multiple pending responses, deliver each as a clearly separated paragraph. Do not lump them.",
     "",
   ];
   for (const r of ctx.pendingLeadershipResponses) {
@@ -233,7 +233,7 @@ function buildSnapshotBlock(ctx: AgentContext): string {
       `- emotional: ${ctx.latestSnapshot.emotional}`,
       `- behavioral: ${ctx.latestSnapshot.behavioral}`,
       "",
-      "Compare these two when you talk to the employee. If the latest reads worse than baseline (more anxious, more skeptical, behavior stalled), open with that observation gently — don't pretend you don't see it. If the latest is better, name what's improved.",
+      "Compare these two when you talk to the employee. If the latest reads worse than baseline (more anxious, more skeptical, behavior stalled), open with that observation gently. Don't pretend you don't see it. If the latest is better, name what's improved.",
     );
   } else if (ctx.baselineSnapshot && !ctx.latestSnapshot) {
     // Defensive: shouldn't happen with the loader's logic but be
@@ -260,11 +260,11 @@ function buildActiveCheckInBlock(ctx: AgentContext): string {
   const intent = (() => {
     switch (ctx.activeCheckIn.kind) {
       case "day_3":
-        return "Three days in. The point of this check-in is to catch early friction before it sets — they've had time to try the new behavior at least once. Open with a specific, low-pressure ask about what's actually happened with the implementation intention they committed to. Don't ask for a status report; ask about a moment.";
+        return "Three days in. The point of this check-in is to catch early friction before it sets. They've had time to try the new behavior at least once. Open with a specific, low-pressure ask about what's actually happened with the implementation intention they committed to. Don't ask for a status report. Ask about a moment.";
       case "week_1":
-        return "One week in. Pattern-detection time. The intention has hit reality 2–5 times by now. Ask about a recent instance where it did or didn't go as planned. If they've drifted, name it directly without judgment and ask what got in the way.";
+        return "One week in. Pattern-detection time. The intention has hit reality two to five times by now. Ask about a recent instance where it did or didn't go as planned. If they've drifted, name it directly without judgment and ask what got in the way.";
       case "week_3":
-        return "Three weeks in. The behavior is either becoming part of the routine or it isn't. Ask whether it feels different now than it did at the start. Probe for any second-order effects (downstream people, time savings, frustrations). This is also when you actively listen for signals that the change should be amended — pass those up via surface_concern.";
+        return "Three weeks in. The behavior is either becoming part of the routine or it isn't. Ask whether it feels different now than it did at the start. Probe for any second-order effects (downstream people, time savings, frustrations). This is also when you actively listen for signals that the change should be amended. Pass those up via surface_concern.";
       default:
         return "Run a brief check-in tailored to where they are.";
     }
@@ -272,13 +272,13 @@ function buildActiveCheckInBlock(ctx: AgentContext): string {
 
   return `# Active scheduled check-in
 
-${kindLabel} — Grasp initiated this turn proactively. ${ctx.employee.name.split(" ")[0]} did not message you first.
+${kindLabel}. Grasp initiated this turn proactively. ${ctx.employee.name.split(" ")[0]} did not message you first.
 
 ${intent}
 
-After the conversation has surfaced enough signal across cognitive, emotional, and behavioral, call \`record_three_dim_response\` (NOT \`record_three_dim_baseline\` — the baseline is already on file). The snapshot will be stamped with this check-in's kind automatically.
+After the conversation has surfaced enough signal across cognitive, emotional, and behavioral, call \`record_three_dim_response\` (NOT \`record_three_dim_baseline\`, since the baseline is already on file). The snapshot will be stamped with this check-in's kind automatically.
 
-Keep it shorter than a kickoff conversation — they don't need the full ramp again. One opening message is fine; if they don't engage, accept that and stop. The cadence is opt-in by attention.`;
+Keep it shorter than a kickoff conversation. They don't need the full ramp again. One opening message is fine. If they don't engage, accept that and stop. The cadence is opt-in by attention.`;
 }
 
 function buildTrainingCorpusBlock(ctx: AgentContext): string {
@@ -287,11 +287,11 @@ function buildTrainingCorpusBlock(ctx: AgentContext): string {
     if (c.hasPending) {
       return `# Training materials
 
-Leadership has uploaded training docs for this rollout but indexing is still in flight — \`lookup_training_doc\` will likely come back empty for now. If they ask about a process detail, say honestly that you can't see the docs yet.`;
+Leadership has uploaded training docs for this rollout but indexing is still in flight. \`lookup_training_doc\` will likely come back empty for now. If they ask about a process detail, say honestly that you can't see the docs yet.`;
     }
     return `# Training materials
 
-No training documents are uploaded for this rollout. If the employee asks about a process detail you don't already know from the system prompt, say so honestly — don't fabricate. You can offer to surface_concern when the missing detail genuinely matters.`;
+No training documents are uploaded for this rollout. If the employee asks about a process detail you don't already know from the system prompt, say so honestly. Don't fabricate. You can offer to surface_concern when the missing detail genuinely matters.`;
   }
   const fileList = c.filenames.map((f) => `- ${f}`).join("\n");
   const moreNote = c.indexedDocCount > c.filenames.length
@@ -304,11 +304,11 @@ ${fileList}${moreNote}
 
 When the employee asks about a process detail, policy, deadline, SLA, eligibility rule, or any specific operational fact you don't already have from the system prompt, call \`lookup_training_doc\` BEFORE answering. Mirror their actual question in the query.
 
-When passages come back: answer in your own voice, citing the source filename casually ("per the onboarding SOP", "the Q4 rollout doc says"). Quote sparingly — paraphrase but don't drift from what the doc actually says.
+When passages come back: answer in your own voice, citing the source filename casually ("per the onboarding SOP", "the Q4 rollout doc says"). Quote sparingly. Paraphrase but don't drift from what the doc actually says.
 
 When the lookup returns nothing relevant: say plainly that you don't have a documented answer and offer to surface_concern if it's worth a leader's eyes. Do NOT invent details.
 
-Never use the lookup tool for opinions, feelings, or generic small talk — it's only for documented operational facts.${
+Never use the lookup tool for opinions, feelings, or generic small talk. It's only for documented operational facts.${
     c.hasPending
       ? `
 
@@ -321,11 +321,11 @@ function buildPendingAmendmentsBlock(ctx: AgentContext): string {
   const lines: string[] = [
     "# Leadership amendments to deliver this turn",
     "",
-    "Leadership has updated the change itself in response to surfaced concerns. You MUST surface the verbatim amendment body in your next message. This is different from a per-concern reply — it is a change to the rollout that affects everyone in scope.",
+    "Leadership has updated the change itself in response to surfaced concerns. You MUST surface the verbatim amendment body in your next message. This is different from a per-concern reply. It is a change to the rollout that affects everyone in scope.",
     "",
     "Rules for delivering an amendment:",
-    "- The amendment body is the substance — quote it verbatim, attributed to leadership. You can frame the surrounding sentences ('Leadership pushed an update to the rollout — here's the change:') but DO NOT paraphrase the body away.",
-    "- If `surfacedByEmployee` is true for an amendment, explicitly credit this employee for surfacing the concern that prompted it. One sentence is enough — 'You raised this; here's what changed because of it.' Don't gush.",
+    "- The amendment body is the substance. Quote it verbatim, attributed to leadership. You can frame the surrounding sentences ('Leadership pushed an update to the rollout. Here's the change:') but DO NOT paraphrase the body away.",
+    "- If `surfacedByEmployee` is true for an amendment, explicitly credit this employee for surfacing the concern that prompted it. One sentence is enough. 'You raised this. Here's what changed because of it.' Don't gush.",
     "- After delivering, ask one short follow-up: does this address the concern, change anything for them, raise a new question? One question, not a list.",
     "- If multiple amendments land in the same turn, deliver each as a clearly separated paragraph. Do not lump them.",
     "",
@@ -336,7 +336,7 @@ function buildPendingAmendmentsBlock(ctx: AgentContext): string {
       `Summary: ${a.summary}`,
       `Authored by: ${a.authorName} on ${a.createdAt.toDateString()}`,
       a.surfacedByEmployee
-        ? `CREDIT THIS EMPLOYEE — they surfaced: ${a.creditedConcernSummaries.map((s) => `"${s}"`).join("; ")}`
+        ? `CREDIT THIS EMPLOYEE. They surfaced: ${a.creditedConcernSummaries.map((s) => `"${s}"`).join(", ")}`
         : "(This employee did not personally surface the source concerns. Deliver without crediting.)",
       "Verbatim body to surface:",
       a.body,
@@ -352,7 +352,7 @@ function buildAwaitingResolutionBlock(ctx: AgentContext): string {
     "",
     "You've already delivered leadership's response to the following concern(s) in a prior turn. The employee is now reacting in their next message.",
     "",
-    "Use these REAL concern_ids when calling `mark_concern_resolved` — never invent ids like 'concern_1'. If the employee clearly signals satisfaction (yes / great / thanks / works for me), call `mark_concern_resolved` with the matching id and a one-line note. If they push back or open a new question, do NOT mark resolved — engage with the substance instead.",
+    "Use these REAL concern_ids when calling `mark_concern_resolved`. Never invent ids like 'concern_1'. If the employee clearly signals satisfaction (yes / great / thanks / works for me), call `mark_concern_resolved` with the matching id and a one-line note. If they push back or open a new question, do NOT mark resolved. Engage with the substance instead.",
     "",
   ];
   for (const c of ctx.awaitingResolutionConcerns) {
@@ -374,7 +374,7 @@ function buildManagerBlock(ctx: AgentContext): string {
     .map(
       (r) =>
         `- ${r.name}${r.title ? ` (${r.title})` : ""}${
-          r.stakeholderGroupName ? ` — group: ${r.stakeholderGroupName}` : ""
+          r.stakeholderGroupName ? ` (group: ${r.stakeholderGroupName})` : ""
         }`,
     )
     .join("\n");
@@ -390,7 +390,7 @@ function buildStakeholderBlock(ctx: AgentContext): string {
   if (!ctx.stakeholderGroup) {
     return `# Their role in the change
 
-We don't have ${ctx.employee.name.split(" ")[0]} mapped to a specific stakeholder group on this plan. Treat them as generally affected — ask how they expect the change to land for them and characterize from there.`;
+We don't have ${ctx.employee.name.split(" ")[0]} mapped to a specific stakeholder group on this plan. Treat them as generally affected. Ask how they expect the change to land for them and characterize from there.`;
   }
   const others = ctx.allGroups.filter((g) => g.id !== ctx.stakeholderGroup!.id);
   return `# Their role in the change
@@ -402,9 +402,9 @@ ${ctx.employee.name.split(" ")[0]} is in the "${ctx.stakeholderGroup.name}" stak
   }
 
 Their group's specific behavior change (Atkins who/what/when/where/how-often):
-${ctx.stakeholderGroup.behaviorSpec ?? "(Not yet specified — anchor on the announcement instead.)"}
+${ctx.stakeholderGroup.behaviorSpec ?? "(Not yet specified. Anchor on the announcement instead.)"}
 
-This is THE behavior the implementation intention should map to. Do not invent a generic behavior — tie it to this spec.${
+This is THE behavior the implementation intention should map to. Do not invent a generic behavior. Tie it to this spec.${
     others.length > 0
       ? `
 
