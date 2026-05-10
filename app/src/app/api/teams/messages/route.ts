@@ -165,9 +165,22 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   // 2. Hand the activity to the adapter, which dispatches into the
   //    AgentApplication via `agent.run(turnContext)`.
+  let adapter;
+  let agent;
   try {
-    const adapter = getTeamsAdapterForAuthConfig(organizationConfig.adapterAuthConfig);
-    const agent = getTeamsAgent();
+    adapter = getTeamsAdapterForAuthConfig(organizationConfig.adapterAuthConfig);
+    agent = getTeamsAgent();
+  } catch (err) {
+    console.error("[teams] failed to build adapter/agent:", err);
+    return new Response(
+      JSON.stringify({
+        error: err instanceof Error ? err.message : "internal error",
+      }),
+      { status: 500, headers: { "content-type": "application/json" } },
+    );
+  }
+
+  try {
     const processPromise = adapter.process(
       fakeReq as unknown as Parameters<typeof adapter.process>[0],
       fakeRes as unknown as Parameters<typeof adapter.process>[1],

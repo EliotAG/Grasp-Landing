@@ -35,6 +35,7 @@ import {
   loadAgentContextByEmployeeId,
 } from "@/lib/agent/context";
 import { runAgentTurn } from "@/lib/agent/conversation";
+import { getTeamsPlaceholderAdapter } from "./adapter";
 
 const globalForAgent = globalThis as unknown as {
   teamsAgent: AgentApplication<TurnState> | undefined;
@@ -46,8 +47,13 @@ export function getTeamsAgent(): AgentApplication<TurnState> {
   // MemoryStorage is fine here — we don't lean on AgentApplication's
   // turn-state for cross-request data; conversation references live
   // in Postgres via captureReference below.
+  //
+  // Pass a placeholder adapter so AgentApplication doesn't construct
+  // its own from environment-derived credentials. The real per-org
+  // adapter is wired up at the route layer via `adapter.process(...)`.
   const app = new AgentApplication<TurnState>({
     storage: new MemoryStorage(),
+    adapter: getTeamsPlaceholderAdapter(),
   });
 
   app.onConversationUpdate("membersAdded", async (context) => {

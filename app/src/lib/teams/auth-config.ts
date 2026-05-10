@@ -1,29 +1,27 @@
 /**
- * Loads the Microsoft 365 Agents SDK auth configuration from env vars.
+ * Builds the Microsoft 365 Agents SDK `AuthConfiguration` for a given
+ * organization's Teams credentials.
  *
- * The SDK ships two loaders:
- *   - `loadAuthConfigFromEnv`     reads `clientId` / `clientSecret` / `tenantId`
- *   - `loadPrevAuthConfigFromEnv` reads `MicrosoftAppId` / `MicrosoftAppPassword` / `MicrosoftAppTenantId`
+ * We deliberately do NOT use the SDK's `loadAuthConfigFromEnv` /
+ * `loadPrevAuthConfigFromEnv` loaders — Teams app credentials live
+ * per-organization in the database, not in `process.env`. Loading
+ * from env would either pin every workspace to one app, or throw
+ * "ClientId required in production" when the env isn't set.
  *
- * We standardize on the legacy Bot Framework names because that's what
- * Azure Bot Service / Entra app-registration setup walkthroughs print
- * in 2026 and what every Teams sample on Microsoft Learn uses. Easier
- * for pilot admins to follow without translating env-var names.
+ * Two flavors are needed because the SDK uses the same type
+ * differently in two places:
+ *   - `getTeamsAuthConfigForCredentials` returns a flat config used
+ *     when constructing a `CloudAdapter`. The adapter's
+ *     `getAuthConfigWithDefaults` is happy with a customConfig that
+ *     has `clientId`/`clientSecret`/`tenantId` set directly.
+ *   - `getTeamsJwtAuthConfigForCredentials` wraps the same config
+ *     in a `connections` Map, which the `authorizeJWT` middleware
+ *     needs in order to look up the matching connection by
+ *     audience (`config.connections.find(c => c.clientId === aud)`).
  */
 
-import {
-  loadPrevAuthConfigFromEnv,
-  type AuthConfiguration,
-} from "@microsoft/agents-hosting";
+import type { AuthConfiguration } from "@microsoft/agents-hosting";
 import type { TeamsCredentials } from "./integration";
-
-let cached: AuthConfiguration | null = null;
-
-export function getTeamsAuthConfig(): AuthConfiguration {
-  if (cached) return cached;
-  cached = loadPrevAuthConfigFromEnv();
-  return cached;
-}
 
 export function getTeamsAuthConfigForCredentials(
   credentials: TeamsCredentials,
