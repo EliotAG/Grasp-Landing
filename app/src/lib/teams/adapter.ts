@@ -39,11 +39,43 @@ export function getTeamsAdapterForAuthConfig(
 }
 
 function createTeamsAdapter(authConfig: AuthConfiguration): CloudAdapter {
-  const adapter = new CloudAdapter(authConfig);
+  if (!authConfig.clientId || !authConfig.clientSecret || !authConfig.tenantId) {
+    throw new Error("Teams DB auth config is missing app id, app password, or tenant id.");
+  }
+
+  const adapter = withSdkEnvAliases(authConfig, () => new CloudAdapter(authConfig));
   // Surface adapter-level errors centrally; per-turn errors propagate
   // to the route handler which logs and returns 500.
   adapter.onTurnError = async (_context, error) => {
     console.error("[teams] adapter turn error:", error);
   };
   return adapter;
+}
+
+function withSdkEnvAliases<T>(authConfig: AuthConfiguration, fn: () => T): T {
+  const previous = {
+    clientId: process.env.clientId,
+    clientSecret: process.env.clientSecret,
+    tenantId: process.env.tenantId,
+  };
+
+  process.env.clientId = authConfig.clientId;
+  process.env.clientSecret = authConfig.clientSecret;
+  process.env.tenantId = authConfig.tenantId;
+
+  try {
+    return fn();
+  } finally {
+    restoreEnv("clientId", previous.clientId);
+    restoreEnv("clientSecret", previous.clientSecret);
+    restoreEnv("tenantId", previous.tenantId);
+  }
+}
+
+function restoreEnv(key: "clientId" | "clientSecret" | "tenantId", value: string | undefined) {
+  if (value === undefined) {
+    delete process.env[key];
+  } else {
+    process.env[key] = value;
+  }
 }

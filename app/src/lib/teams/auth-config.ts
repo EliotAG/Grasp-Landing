@@ -28,7 +28,7 @@ export function getTeamsAuthConfig(): AuthConfiguration {
 export function getTeamsAuthConfigForCredentials(
   credentials: TeamsCredentials,
 ): AuthConfiguration {
-  const connection = {
+  return {
     tenantId: credentials.tenantId,
     clientId: credentials.appId,
     clientSecret: credentials.appPassword,
@@ -46,12 +46,6 @@ export function getTeamsAuthConfigForCredentials(
     ],
     altBlueprintConnectionName: undefined,
     WIDAssertionFile: undefined,
-  };
-
-  return {
-    ...connection,
-    connections: new Map([["serviceConnection", connection]]),
-    connectionsMap: [{ serviceUrl: "*", connection: "serviceConnection" }],
   };
 }
 
