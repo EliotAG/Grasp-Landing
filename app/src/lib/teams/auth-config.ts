@@ -49,6 +49,17 @@ export function getTeamsAuthConfigForCredentials(
   };
 }
 
+export function getTeamsJwtAuthConfigForCredentials(
+  credentials: TeamsCredentials,
+): AuthConfiguration {
+  const connection = getTeamsAuthConfigForCredentials(credentials);
+  return {
+    ...connection,
+    connections: new Map([["serviceConnection", connection]]),
+    connectionsMap: [{ serviceUrl: "*", connection: "serviceConnection" }],
+  };
+}
+
 /** True iff the Teams bot env vars look populated. UI uses this to gate
  *  the integration card and avoid noisy 500s on the message endpoint. */
 export function isTeamsConfigured(): boolean {

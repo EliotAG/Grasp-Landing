@@ -22,7 +22,10 @@ import { authorizeJWT } from "@microsoft/agents-hosting";
 
 import { getTeamsAdapterForAuthConfig } from "@/lib/teams/adapter";
 import { getTeamsAgent } from "@/lib/teams/agent";
-import { getTeamsAuthConfigForCredentials } from "@/lib/teams/auth-config";
+import {
+  getTeamsAuthConfigForCredentials,
+  getTeamsJwtAuthConfigForCredentials,
+} from "@/lib/teams/auth-config";
 import {
   getSingleEnabledTeamsConfig,
   getTeamsConfigByMicrosoftAppId,
@@ -131,7 +134,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   // 1. Validate the inbound JWT. authorizeJWT writes 401 directly to
   //    fakeRes on failure (and never calls next), which resolves the
   //    response promise via our shim. On success it stamps req.user.
-  const authConfig = organizationConfig.authConfig;
+  const authConfig = organizationConfig.jwtAuthConfig;
   let jwtFailed = false;
   const authCompleted = await withTimeout(
     new Promise<"ok">((resolve) => {
@@ -163,7 +166,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   // 2. Hand the activity to the adapter, which dispatches into the
   //    AgentApplication via `agent.run(turnContext)`.
   try {
-    const adapter = getTeamsAdapterForAuthConfig(organizationConfig.authConfig);
+    const adapter = getTeamsAdapterForAuthConfig(organizationConfig.adapterAuthConfig);
     const agent = getTeamsAgent();
     const processPromise = adapter.process(
       fakeReq as unknown as Parameters<typeof adapter.process>[0],
@@ -212,18 +215,27 @@ export async function POST(req: NextRequest): Promise<Response> {
 
 async function resolveAuthConfigForRequest(
   req: NextRequest,
-): Promise<{ authConfig: ReturnType<typeof getTeamsAuthConfigForCredentials> } | null> {
+): Promise<{
+  adapterAuthConfig: ReturnType<typeof getTeamsAuthConfigForCredentials>;
+  jwtAuthConfig: ReturnType<typeof getTeamsJwtAuthConfigForCredentials>;
+} | null> {
   const appIds = readAppIdsFromBearer(req.headers.get("authorization"));
   for (const appId of appIds) {
     const config = await getTeamsConfigByMicrosoftAppId(appId);
     if (config?.credentials) {
-      return { authConfig: getTeamsAuthConfigForCredentials(config.credentials) };
+      return {
+        adapterAuthConfig: getTeamsAuthConfigForCredentials(config.credentials),
+        jwtAuthConfig: getTeamsJwtAuthConfigForCredentials(config.credentials),
+      };
     }
   }
 
   const config = await getSingleEnabledTeamsConfig();
   if (!config?.credentials) return null;
-  return { authConfig: getTeamsAuthConfigForCredentials(config.credentials) };
+  return {
+    adapterAuthConfig: getTeamsAuthConfigForCredentials(config.credentials),
+    jwtAuthConfig: getTeamsJwtAuthConfigForCredentials(config.credentials),
+  };
 }
 
 function readAppIdsFromBearer(header: string | null): string[] {
