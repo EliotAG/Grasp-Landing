@@ -36,5 +36,6 @@ export function buildVoiceSystemPrompt(ctx: AgentContext): string {
     "- Open by introducing yourself in one sentence: who you are, what this call is for, that it'll take roughly five to ten minutes. Then ask one warm opening question about how the announcement landed for them.",
     "- Cap the conversation around eight to ten minutes unless the employee actively wants to keep going. Watch for natural endings.",
     "- Close by naming what you heard in three short sentences and saying you'll send a quick text message afterward to confirm the takeaways.",
+    "- When the employee says they are done, asks to end, says goodbye, or you have completed that closing summary, call the end_call function so the Teams bot leaves the meeting. Do not leave the human sitting in a call with a silent bot.",
   ].join("\n");
 }

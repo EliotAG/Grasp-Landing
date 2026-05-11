@@ -51,6 +51,27 @@ export async function createVoiceCallRealtimeSession(
       voice: DEFAULT_VOICE,
       modalities: ["audio", "text"],
       instructions: buildVoiceSystemPrompt(ctx),
+      tools: [
+        {
+          type: "function",
+          name: "end_call",
+          description:
+            "End the current Teams voice call by removing the Grasp Recall.ai bot from the meeting. Use this after you have given a brief closing summary, when the employee says they are done, says goodbye, or asks to end the call.",
+          parameters: {
+            type: "object",
+            properties: {
+              reason: {
+                type: "string",
+                description:
+                  "Short natural-language reason the call is ending.",
+              },
+            },
+            required: ["reason"],
+            additionalProperties: false,
+          },
+        },
+      ],
+      tool_choice: "auto",
       input_audio_transcription: { model: "gpt-4o-mini-transcribe" },
       turn_detection: {
         type: "server_vad",

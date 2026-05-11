@@ -78,11 +78,30 @@ function renderOutputMediaHtml(callId: string, token: string): string {
       for (const track of meetingStream.getTracks()) pc.addTrack(track, meetingStream);
 
       const dc = pc.createDataChannel("oai-events");
+      const pendingToolCalls = new Map();
       const dcOpen = new Promise((resolve, reject) => {
         dc.onopen = resolve;
         dc.onerror = () => reject(new Error("data channel failed"));
       });
-      dc.onmessage = (event) => console.log("[openai-event]", event.data);
+      dc.onmessage = (event) => {
+        console.log("[openai-event]", event.data);
+        let payload;
+        try { payload = JSON.parse(event.data); } catch { return; }
+        if (payload.type === "response.function_call_arguments.delta" && payload.call_id && payload.name) {
+          const current = pendingToolCalls.get(payload.call_id) || { name: payload.name, args: "" };
+          current.args += payload.delta || "";
+          pendingToolCalls.set(payload.call_id, current);
+          return;
+        }
+        if (payload.type === "response.function_call_arguments.done" && payload.call_id && payload.name) {
+          const current = pendingToolCalls.get(payload.call_id) || { name: payload.name, args: "" };
+          const args = payload.arguments || current.args || "{}";
+          pendingToolCalls.delete(payload.call_id);
+          handleToolCall(dc, payload.call_id, payload.name, args, pc, meetingStream, audio).catch((err) => {
+            console.error("[grasp-output] tool failed", err);
+          });
+        }
+      };
 
       const offer = await pc.createOffer({ offerToReceiveAudio: true });
       await pc.setLocalDescription(offer);
@@ -97,6 +116,32 @@ function renderOutputMediaHtml(callId: string, token: string): string {
 
       setStatus("Live. Speaking through Teams.");
       dc.send(JSON.stringify({ type: "response.create", response: { modalities: ["audio", "text"] } }));
+    }
+
+    async function handleToolCall(dc, callIdFromModel, name, argsString, pc, meetingStream, audio) {
+      let result;
+      if (name === "end_call") {
+        setStatus("Ending call...");
+        const res = await fetch("/api/calls/" + encodeURIComponent(callId) + "/end-call?token=" + encodeURIComponent(token), { method: "POST" });
+        result = res.ok ? await res.json() : { ok: false, error: await res.text() };
+        try { meetingStream.getTracks().forEach((track) => track.stop()); } catch {}
+        try { pc.close(); } catch {}
+        try { audio.srcObject = null; } catch {}
+        setStatus("Call ended.");
+      } else {
+        result = { ok: false, error: "Unknown tool: " + name };
+      }
+
+      if (dc.readyState === "open") {
+        dc.send(JSON.stringify({
+          type: "conversation.item.create",
+          item: {
+            type: "function_call_output",
+            call_id: callIdFromModel,
+            output: JSON.stringify(result)
+          }
+        }));
+      }
     }
 
     main().catch((err) => {
