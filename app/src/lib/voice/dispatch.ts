@@ -62,6 +62,18 @@ function recallParticipantEventsUrl(callId: string): string {
   return url.toString();
 }
 
+function recallOutputMediaUrl(callId: string): string {
+  const base = getConfiguredAppBaseUrl();
+  if (!base) {
+    throw new Error(
+      "No app base URL is configured for Recall output media",
+    );
+  }
+  const url = new URL(absoluteAppUrl(base, `/api/calls/${callId}/output-media`));
+  url.searchParams.set("token", createRecallRealtimeWebhookToken(callId));
+  return url.toString();
+}
+
 export async function drainDueVoiceCalls(opts?: {
   limit?: number;
   leadMinutes?: number;
@@ -229,6 +241,7 @@ export async function runScheduledVoiceCall(
       systemPrompt,
       webhookUrl,
       participantEventsWebhookUrl: recallParticipantEventsUrl(callId),
+      outputMediaUrl: recallOutputMediaUrl(callId),
       // Recall accepts a join_at timestamp; we pass the row's
       // scheduledFor so the bot waits in the lobby until the slot.
       joinAt: row.scheduledFor,

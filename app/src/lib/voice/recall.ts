@@ -31,6 +31,11 @@ export interface DeployRecallBotInput {
    */
   participantEventsWebhookUrl?: string;
   /**
+   * Public page Recall.ai renders as the bot's camera. The page owns the
+   * OpenAI Realtime WebRTC session and plays assistant audio back into Teams.
+   */
+  outputMediaUrl: string;
+  /**
    * Optional join timestamp. When omitted Recall sends the bot
    * immediately; we usually pre-warm a minute or two before
    * `scheduledFor` so the bot is in the room when the user arrives.
@@ -70,51 +75,46 @@ export async function deployRecallBot(
   if (!apiKey) {
     throw new RecallDeployError("RECALL_API_KEY is not configured");
   }
-  const openaiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!openaiKey) {
+  if (!process.env.OPENAI_API_KEY?.trim()) {
     throw new RecallDeployError(
       "OPENAI_API_KEY is not configured (required for the Realtime voice loop)",
     );
   }
-  const realtimeModel =
-    process.env.OPENAI_REALTIME_MODEL?.trim() || "gpt-realtime-2";
 
   const body = {
     meeting_url: input.meetingUrl,
     bot_name: input.botName,
     join_at: input.joinAt?.toISOString(),
+    variant: {
+      microsoft_teams: "web_4_core",
+    },
     output_media: {
-      // Recall.ai's documented OpenAI Realtime bridge: routes meeting
-      // audio to OpenAI Realtime over WebSocket and pipes the model's
-      // audio back into the meeting as the bot's voice.
-      provider: "openai_realtime",
-      config: {
-        api_key: openaiKey,
-        model: realtimeModel,
-        voice: "alloy",
-        instructions: input.systemPrompt,
+      // Recall streams this webpage's audio/video back into Teams. The
+      // page connects meeting audio to OpenAI Realtime and plays the
+      // assistant's audio response.
+      camera: {
+        kind: "webpage",
+        config: { url: input.outputMediaUrl },
       },
     },
-    // Cheap streaming transcription; we only need it for the post-
-    // call extractor pass and for the leader's recap UI.
-    real_time_transcription: {
-      provider: "deepgram_streaming",
+    recording_config: {
+      include_bot_in_recording: { audio: true },
+      ...(input.participantEventsWebhookUrl
+        ? {
+            realtime_endpoints: [
+              {
+                type: "webhook",
+                url: input.participantEventsWebhookUrl,
+                events: [
+                  "participant_events.join",
+                  "participant_events.update",
+                  "participant_events.leave",
+                ],
+              },
+            ],
+          }
+        : {}),
     },
-    recording_config: input.participantEventsWebhookUrl
-      ? {
-          realtime_endpoints: [
-            {
-              type: "webhook",
-              url: input.participantEventsWebhookUrl,
-              events: [
-                "participant_events.join",
-                "participant_events.update",
-                "participant_events.leave",
-              ],
-            },
-          ],
-        }
-      : undefined,
     // Recall fans status-change events to this URL. We only act on
     // bot.status_change with status = done in the webhook.
     webhook_url: input.webhookUrl,
