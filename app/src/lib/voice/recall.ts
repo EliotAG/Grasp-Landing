@@ -26,6 +26,11 @@ export interface DeployRecallBotInput {
    */
   webhookUrl: string;
   /**
+   * Public URL Recall.ai posts realtime participant events to. Used to
+   * detect when the invited employee joins the Teams meeting.
+   */
+  participantEventsWebhookUrl?: string;
+  /**
    * Optional join timestamp. When omitted Recall sends the bot
    * immediately; we usually pre-warm a minute or two before
    * `scheduledFor` so the bot is in the room when the user arrives.
@@ -95,6 +100,21 @@ export async function deployRecallBot(
     real_time_transcription: {
       provider: "deepgram_streaming",
     },
+    recording_config: input.participantEventsWebhookUrl
+      ? {
+          realtime_endpoints: [
+            {
+              type: "webhook",
+              url: input.participantEventsWebhookUrl,
+              events: [
+                "participant_events.join",
+                "participant_events.update",
+                "participant_events.leave",
+              ],
+            },
+          ],
+        }
+      : undefined,
     // Recall fans status-change events to this URL. We only act on
     // bot.status_change with status = done in the webhook.
     webhook_url: input.webhookUrl,

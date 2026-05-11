@@ -21,6 +21,7 @@ import { loadAgentContextByEmail } from "@/lib/agent/context";
 import { buildVoiceSystemPrompt } from "@/lib/agent/voice-prompt";
 
 import { deployRecallBot, isRecallConfigured, RecallDeployError } from "./recall";
+import { createRecallRealtimeWebhookToken } from "./realtime-events";
 
 /** Default lead window: pre-warm the bot 2 minutes before the slot. */
 const DEFAULT_LEAD_MINUTES = 2;
@@ -44,6 +45,21 @@ function recallWebhookUrl(): string {
     );
   }
   return absoluteAppUrl(base, "/api/calls/recall-webhook");
+}
+
+function recallParticipantEventsUrl(callId: string): string {
+  const base = getConfiguredAppBaseUrl();
+  if (!base) {
+    throw new Error(
+      "No app base URL is configured for Recall participant event webhooks",
+    );
+  }
+  const url = new URL(
+    absoluteAppUrl(base, "/api/calls/recall-participant-events/"),
+  );
+  url.searchParams.set("callId", callId);
+  url.searchParams.set("token", createRecallRealtimeWebhookToken(callId));
+  return url.toString();
 }
 
 export async function drainDueVoiceCalls(opts?: {
@@ -212,6 +228,7 @@ export async function runScheduledVoiceCall(
       botName: `Grasp · ${row.changePlan.organization.name}`.slice(0, 64),
       systemPrompt,
       webhookUrl,
+      participantEventsWebhookUrl: recallParticipantEventsUrl(callId),
       // Recall accepts a join_at timestamp; we pass the row's
       // scheduledFor so the bot waits in the lobby until the slot.
       joinAt: row.scheduledFor,

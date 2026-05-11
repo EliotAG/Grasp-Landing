@@ -1183,6 +1183,18 @@ model ScheduledVoiceCall {
   inviteError    String?         @map("invite_error")
   /// Recall.ai bot id, set when the bot is deployed into the meeting.
   recallBotId   String?          @map("recall_bot_id")
+  /// First target-participant join/update event observed by Recall's
+  /// realtime participant webhook. Used to know when the employee
+  /// actually entered the Teams room.
+  participantJoinedAt    DateTime? @map("participant_joined_at")
+  /// Last participant event timestamp observed for the target employee
+  /// or first non-bot attendee in this one-person room.
+  participantLastSeenAt  DateTime? @map("participant_last_seen_at")
+  participantRecallId    Int?      @map("participant_recall_id")
+  participantName        String?   @map("participant_name")
+  participantEmail       String?   @map("participant_email")
+  participantPlatform    String?   @map("participant_platform")
+  participantLastEvent   Json?     @map("participant_last_event")
   dispatchedAt  DateTime?        @map("dispatched_at")
   completedAt   DateTime?        @map("completed_at")
   /// JSON transcript from Recall.ai once the call ends. Shape mirrors
