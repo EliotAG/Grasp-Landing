@@ -18,6 +18,7 @@ export interface OrganizationTeamsConfig {
   teamsAppCatalogId: string | null;
   teamsAppManifestId: string | null;
   serviceUrl: string | null;
+  voiceOrganizerUpn: string | null;
   missing: string[];
   row: OrganizationTeamsIntegration | null;
 }
@@ -31,6 +32,7 @@ export interface SaveOrganizationTeamsConfigInput {
   teamsAppCatalogId?: string;
   teamsAppManifestId?: string;
   serviceUrl?: string;
+  voiceOrganizerUpn?: string;
 }
 
 function envConfig(organizationId: string | null): OrganizationTeamsConfig {
@@ -61,6 +63,7 @@ function envConfig(organizationId: string | null): OrganizationTeamsConfig {
     teamsAppCatalogId: catalogId,
     teamsAppManifestId: manifestId,
     serviceUrl: null,
+    voiceOrganizerUpn: trimOrNull(process.env.VOICE_ORGANIZER_UPN),
     missing,
     row: null,
   };
@@ -101,6 +104,7 @@ function fromRow(row: OrganizationTeamsIntegration): OrganizationTeamsConfig {
     teamsAppCatalogId: catalogId,
     teamsAppManifestId: manifestId,
     serviceUrl: trimOrNull(row.serviceUrl),
+    voiceOrganizerUpn: trimOrNull(row.voiceOrganizerUpn),
     missing,
     row,
   };
@@ -124,6 +128,7 @@ export async function getOrganizationTeamsConfig(
     teamsAppCatalogId: null,
     teamsAppManifestId: null,
     serviceUrl: null,
+    voiceOrganizerUpn: null,
     missing: ["Teams is not configured for this workspace"],
     row: null,
   };
@@ -163,6 +168,7 @@ export async function saveOrganizationTeamsConfig(
     teamsAppCatalogId: trimOrNull(input.teamsAppCatalogId),
     teamsAppManifestId: trimOrNull(input.teamsAppManifestId),
     serviceUrl: trimOrNull(input.serviceUrl),
+    voiceOrganizerUpn: trimOrNull(input.voiceOrganizerUpn),
     lastCheckError: null,
     ...(encrypted ? { microsoftAppPasswordEncrypted: encrypted } : {}),
   };

@@ -17,6 +17,7 @@ export interface TeamsConfigFormValue {
   teamsAppCatalogId: string;
   teamsAppManifestId: string;
   serviceUrl: string;
+  voiceOrganizerUpn: string;
 }
 
 export function TeamsConfigForm({ value }: { value: TeamsConfigFormValue }) {
@@ -80,6 +81,12 @@ export function TeamsConfigForm({ value }: { value: TeamsConfigFormValue }) {
             name="serviceUrl"
             defaultValue={value.serviceUrl}
             placeholder="Optional"
+          />
+          <TextField
+            label="Voice organizer mailbox"
+            name="voiceOrganizerUpn"
+            defaultValue={value.voiceOrganizerUpn}
+            placeholder="grasp-bot@tenant.onmicrosoft.com"
           />
         </div>
 

@@ -74,7 +74,7 @@ export default async function ChangesPage() {
                   return (
                     <li key={p.id}>
                       <Link
-                        href={`/changes/${p.id}/wizard`}
+                        href={`/changes/${p.id}/intake`}
                         className="card flex items-center justify-between gap-6 p-6 no-underline transition-transform hover:-translate-y-0.5"
                       >
                         <div className="min-w-0">
@@ -85,8 +85,8 @@ export default async function ChangesPage() {
                               draft
                             </span>
                             <span className="text-[12px] text-[color:var(--color-muted)]">
-                              Step {step.index} of {TOTAL_STEPS} ·{" "}
-                              {step.label}
+                              Intake draft · classic step {step.index} of{" "}
+                              {TOTAL_STEPS} · {step.label}
                             </span>
                             {p.lastSavedAt ? (
                               <span className="text-[12px] text-[color:var(--color-muted-2)]">

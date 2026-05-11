@@ -97,6 +97,7 @@ export async function saveTeamsConfigAction(
   const teamsAppCatalogId = String(formData.get("teamsAppCatalogId") ?? "").trim();
   const teamsAppManifestId = String(formData.get("teamsAppManifestId") ?? "").trim();
   const serviceUrl = String(formData.get("serviceUrl") ?? "").trim();
+  const voiceOrganizerUpn = String(formData.get("voiceOrganizerUpn") ?? "").trim();
 
   const existing = await prisma.organizationTeamsIntegration.findUnique({
     where: { organizationId },
@@ -127,6 +128,7 @@ export async function saveTeamsConfigAction(
     teamsAppCatalogId,
     teamsAppManifestId,
     serviceUrl,
+    voiceOrganizerUpn,
   });
   revalidatePath("/settings");
   revalidatePath("/settings/teams");

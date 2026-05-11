@@ -21,10 +21,10 @@ export default function NewChangePlan() {
           What are you <span className="italic font-normal">rolling out</span>?
         </h1>
         <p className="mt-3 text-[15px] leading-[1.65] text-[color:var(--color-muted)]">
-          Just enough to start. The wizard will help you specify behaviors per
-          stakeholder group, score the announcement, and produce a complete
-          change plan. Drafts save automatically and you can come back any
-          time.
+          Just enough to start. The agentic intake can begin with docs or rough
+          notes, then help you specify behaviors per stakeholder group and
+          produce a complete change plan. Drafts save automatically and you can
+          come back any time.
         </p>
       </div>
 
@@ -64,7 +64,7 @@ export default function NewChangePlan() {
             Saved as a draft. You can leave at any time and resume.
           </p>
           <button type="submit" className="btn btn-primary">
-            Start wizard →
+            Start intake →
           </button>
         </div>
       </form>

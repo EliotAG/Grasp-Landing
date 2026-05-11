@@ -54,7 +54,7 @@ export default async function ChangePlanDetail({
 
   // Drafts always live in the wizard. The detail page is the read-only
   // review for plans that have been marked complete.
-  if (plan.status === "draft") redirect(`/changes/${id}/wizard`);
+  if (plan.status === "draft") redirect(`/changes/${id}/intake`);
 
   // For active plans we also need the enrollment status board.
   const enrollments =

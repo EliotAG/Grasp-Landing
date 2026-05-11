@@ -151,6 +151,10 @@ model OrganizationTeamsIntegration {
   teamsAppCatalogId           String? @map("teams_app_catalog_id")
   teamsAppManifestId          String? @map("teams_app_manifest_id")
   serviceUrl                  String? @map("service_url")
+  /// Mailbox used as the organizer for Graph-created voice kickoff
+  /// Teams meetings. Lets leaders log in with non-Microsoft emails
+  /// while meetings are owned by a real tenant mailbox.
+  voiceOrganizerUpn           String? @map("voice_organizer_upn")
 
   lastCheckedAt  DateTime? @map("last_checked_at")
   lastCheckError String?   @map("last_check_error")

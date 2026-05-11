@@ -29,8 +29,8 @@ import {
   createOnlineMeeting,
   GraphClientError,
   explainGraphError,
-  isGraphConfigured,
 } from "@/lib/graph/client";
+import { getOrganizationTeamsConfig } from "@/lib/teams/integration";
 
 export interface VoiceScheduleSummary {
   scheduled: number;
@@ -65,7 +65,7 @@ export async function scheduleVoiceCallsForPlan(
       voiceKickoffDurationMinutes: true,
       activatedAt: true,
       activatedBy: { select: { email: true, name: true } },
-      organization: { select: { name: true } },
+      organization: { select: { id: true, name: true } },
     },
   });
   if (!plan) throw new Error("Change plan not found");
@@ -78,7 +78,8 @@ export async function scheduleVoiceCallsForPlan(
       reason: "voice_disabled",
     };
   }
-  if (!isGraphConfigured()) {
+  const teamsConfig = await getOrganizationTeamsConfig(plan.organization.id);
+  if (!teamsConfig.credentials) {
     return {
       scheduled: 0,
       invited: 0,
@@ -87,7 +88,8 @@ export async function scheduleVoiceCallsForPlan(
       reason: "graph_not_configured",
     };
   }
-  const organizerUpn = plan.activatedBy?.email?.trim();
+  const organizerUpn =
+    teamsConfig.voiceOrganizerUpn?.trim() ?? plan.activatedBy?.email?.trim();
   if (!organizerUpn) {
     return {
       scheduled: 0,
@@ -214,6 +216,7 @@ export async function scheduleVoiceCallsForPlan(
         subject,
         start,
         end,
+        credentials: teamsConfig.credentials,
       });
 
       // 2. Send the actual calendar invite to the employee. Outlook
@@ -236,6 +239,7 @@ export async function scheduleVoiceCallsForPlan(
         start,
         end,
         joinUrl: meeting.joinWebUrl,
+        credentials: teamsConfig.credentials,
       });
 
       await prisma.scheduledVoiceCall.update({

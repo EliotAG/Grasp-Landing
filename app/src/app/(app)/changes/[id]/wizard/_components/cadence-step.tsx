@@ -940,8 +940,8 @@ export function CadenceStep({
               <span className="block text-[12px] text-[color:var(--color-muted)] mt-0.5">
                 Off: kickoff is text-only in Teams. On: when you activate,
                 Grasp uses Microsoft Graph to put a Teams meeting on each
-                enrollee&rsquo;s calendar (organizer = you) and joins via
-                Recall.ai + OpenAI Realtime at the scheduled time.
+                enrollee&rsquo;s calendar using the workspace organizer mailbox
+                and joins via Recall.ai + OpenAI Realtime at the scheduled time.
               </span>
             </span>
           </label>

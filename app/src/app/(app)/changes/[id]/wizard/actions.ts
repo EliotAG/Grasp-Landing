@@ -510,24 +510,35 @@ export async function saveVoiceKickoff(
 }
 
 /**
- * Wizard "Test connection" button — pokes Graph with the activator's
- * email so the leader knows whether tenant admin consent + the
- * Application Access Policy are in place BEFORE they activate.
+ * Wizard "Test connection" button — pokes Graph with the workspace's
+ * configured voice organizer mailbox so the leader knows whether tenant
+ * admin consent + the Application Access Policy are in place BEFORE
+ * they activate.
  */
 export async function testVoiceKickoffConnection(
   changePlanId: string,
 ): Promise<{ ok: boolean; detail: string; status?: number }> {
   const { session } = await loadOwnedPlan(changePlanId);
-  const organizerUpn = session.user.email;
+  const { getOrganizationTeamsConfig } = await import("@/lib/teams/integration");
+  const teamsConfig = await getOrganizationTeamsConfig(session.user.organizationId!);
+  const organizerUpn =
+    teamsConfig.voiceOrganizerUpn?.trim() ?? session.user.email;
   if (!organizerUpn) {
     return {
       ok: false,
       detail:
-        "Your Grasp account doesn't have an email on file — voice kickoff needs your Microsoft 365 UPN to create meetings on your behalf.",
+        "Set a voice organizer mailbox in Teams settings before testing voice kickoff.",
+    };
+  }
+  if (!teamsConfig.credentials) {
+    return {
+      ok: false,
+      detail:
+        "Teams is missing Microsoft Graph credentials. Save the tenant id, app id, and app password in Teams settings first.",
     };
   }
   const { probeGraph } = await import("@/lib/graph/client");
-  const result = await probeGraph(organizerUpn);
+  const result = await probeGraph(organizerUpn, teamsConfig.credentials);
   return {
     ok: result.ok,
     detail: result.detail,

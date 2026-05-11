@@ -340,6 +340,7 @@ export interface CreateOnlineMeetingInput {
   subject: string;
   start: Date;
   end: Date;
+  credentials?: TeamsAppCredentials;
 }
 
 export interface OnlineMeeting {
@@ -366,6 +367,7 @@ export async function createOnlineMeeting(
         isDialInBypassEnabled: true,
       },
     },
+    credentials: input.credentials,
   });
   if (!res.ok) throw await readGraphError(res);
   const json = (await res.json()) as {
@@ -398,6 +400,7 @@ export interface CreateCalendarEventInput {
    * here so Outlook renders the click-to-join chip on the event.
    */
   joinUrl: string;
+  credentials?: TeamsAppCredentials;
 }
 
 export interface CalendarEvent {
@@ -435,6 +438,7 @@ export async function createCalendarEvent(
       // event on the organizer's calendar but won't email attendees.
       responseRequested: true,
     },
+    credentials: input.credentials,
   });
   if (!res.ok) throw await readGraphError(res);
   const json = (await res.json()) as { id?: string };
@@ -452,10 +456,12 @@ export async function createCalendarEvent(
 export async function deleteCalendarEvent(
   organizerUpn: string,
   eventId: string,
+  credentials?: TeamsAppCredentials,
 ): Promise<void> {
   const res = await graphRequest({
     method: "DELETE",
     path: `/users/${encodeURIComponent(organizerUpn)}/events/${encodeURIComponent(eventId)}`,
+    credentials,
   });
   // 404 is fine — already gone.
   if (!res.ok && res.status !== 404) throw await readGraphError(res);
@@ -483,8 +489,9 @@ export interface GraphProbeResult {
  */
 export async function probeGraph(
   organizerUpn: string,
+  credentials?: TeamsAppCredentials,
 ): Promise<GraphProbeResult> {
-  if (!isGraphConfigured()) {
+  if (!credentials && !isGraphConfigured()) {
     return {
       ok: false,
       detail:
@@ -495,6 +502,7 @@ export async function probeGraph(
     const res = await graphRequest({
       method: "GET",
       path: `/users/${encodeURIComponent(organizerUpn)}/mailboxSettings`,
+      credentials,
     });
     if (res.ok) {
       return {

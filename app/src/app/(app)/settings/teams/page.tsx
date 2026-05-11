@@ -171,6 +171,7 @@ export default async function TeamsSettingsPage() {
                   teamsAppCatalogId: teamsConfig.row?.teamsAppCatalogId ?? "",
                   teamsAppManifestId: teamsConfig.row?.teamsAppManifestId ?? "",
                   serviceUrl: teamsConfig.row?.serviceUrl ?? "",
+                  voiceOrganizerUpn: teamsConfig.voiceOrganizerUpn ?? "",
                 }}
               />
             </div>
@@ -240,6 +241,12 @@ export default async function TeamsSettingsPage() {
             </code>
             , and{" "}
             <code className="font-mono text-[12.5px]">Chat.ReadBasic.All</code>
+            ,{" "}
+            <code className="font-mono text-[12.5px]">
+              OnlineMeetings.ReadWrite.All
+            </code>
+            , and{" "}
+            <code className="font-mono text-[12.5px]">Calendars.ReadWrite</code>
             . Then click Grant admin consent for the customer tenant.
           </Step>
 
@@ -264,6 +271,13 @@ export default async function TeamsSettingsPage() {
             Save the configuration, test Graph permissions, then bootstrap
             recipients. Once Teams sends install/open events, users appear under
             captured conversations and can receive a proactive test message.
+          </Step>
+
+          <Step n={7} title="Configure the voice organizer mailbox">
+            Enter a real Microsoft 365 mailbox in the voice organizer field above
+            if voice kickoff calls are enabled. Grant the Teams application access
+            policy to that mailbox (or globally) so Graph can create Teams
+            meetings on its calendar.
           </Step>
         </ol>
       </section>

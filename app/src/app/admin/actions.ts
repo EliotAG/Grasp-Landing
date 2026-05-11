@@ -16,6 +16,7 @@ import { requireAgentGraspAdmin } from "@/lib/admin";
 import { sendKickoffDms } from "@/lib/changes/kickoff";
 import { prisma } from "@/lib/db";
 import { deleteCalendarEvent } from "@/lib/graph/client";
+import { getOrganizationTeamsConfig } from "@/lib/teams/integration";
 import { runScheduledVoiceCall } from "@/lib/voice/dispatch";
 import { scheduleVoiceCallsForPlan } from "@/lib/voice/schedule";
 
@@ -123,6 +124,7 @@ export async function cancelVoiceCallAction(
       graphEventId: true,
       changePlan: {
         select: {
+          organizationId: true,
           activatedBy: { select: { email: true } },
         },
       },
@@ -139,9 +141,17 @@ export async function cancelVoiceCallAction(
   });
 
   const organizerEmail = row.changePlan.activatedBy?.email;
-  if (row.graphEventId && organizerEmail) {
+  const teamsConfig = await getOrganizationTeamsConfig(
+    row.changePlan.organizationId,
+  );
+  const organizerUpn = teamsConfig.voiceOrganizerUpn ?? organizerEmail;
+  if (row.graphEventId && organizerUpn) {
     try {
-      await deleteCalendarEvent(organizerEmail, row.graphEventId);
+      await deleteCalendarEvent(
+        organizerUpn,
+        row.graphEventId,
+        teamsConfig.credentials ?? undefined,
+      );
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Unknown Graph cancellation error";
