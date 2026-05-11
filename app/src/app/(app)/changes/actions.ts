@@ -63,5 +63,5 @@ export async function createChangePlan(formData: FormData) {
   revalidatePath("/changes");
   revalidatePath("/dashboard");
 
-  redirect(`/changes/${created.id}/intake`);
+  redirect(`/changes/${created.id}/wizard/change`);
 }

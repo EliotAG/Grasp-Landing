@@ -28,7 +28,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
     label: "What's changing?",
     title: "What's changing?",
     blurb:
-      "Name the rollout, explain what will be different, define the key outcome to protect, and choose the adoption window.",
+      "Drop in any docs you already have, name the rollout, explain what will be different, and choose the adoption window.",
   },
   {
     slug: "audience",
@@ -44,7 +44,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
     label: "How will Grasp support them?",
     title: "How will Grasp support them?",
     blurb:
-      "Upload the materials the agent can use, and set the leadership response promise for surfaced concerns.",
+      "Set the leadership response promise, schedule the check-ins, and choose how Grasp kicks off with each person.",
   },
   {
     slug: "approve",

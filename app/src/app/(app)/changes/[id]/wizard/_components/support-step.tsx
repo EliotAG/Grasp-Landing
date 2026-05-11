@@ -1,5 +1,4 @@
 import { CadenceStep } from "./cadence-step";
-import { MaterialsStep } from "./materials-step";
 import { StepNav } from "./step-nav";
 import type { WizardPlan } from "./types";
 
@@ -7,17 +6,9 @@ export function SupportStep({ plan }: { plan: WizardPlan }) {
   return (
     <div className="space-y-10">
       <WizardSection
-        eyebrow="Knowledge"
-        title="Add training materials"
-        description="Upload any docs the agent should use when answering questions for this change."
-      >
-        <MaterialsStep plan={plan} showNav={false} />
-      </WizardSection>
-
-      <WizardSection
         eyebrow="Commitment"
         title="Set the leadership response promise"
-        description="Decide how quickly you will respond when Grasp surfaces a concern."
+        description="Decide how quickly you will respond when Grasp surfaces a concern, schedule the post-kickoff check-ins, and (optionally) turn on voice kickoff calls."
       >
         <CadenceStep plan={plan} showNav={false} />
       </WizardSection>

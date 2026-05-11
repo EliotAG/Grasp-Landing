@@ -51,8 +51,6 @@ export function ReviewStep({ plan }: { plan: WizardPlan }) {
   if (plan.stakeholderGroups.some((g) => !g.behaviorSpec?.trim())) {
     issues.push("Who needs to change: at least one group is missing what they need to do.");
   }
-  if (!plan.coreMechanism?.trim())
-    issues.push("What's changing: key outcome to protect is not yet specified.");
   if (!plan.announcement?.trim())
     issues.push("Approve the rollout: no announcement draft yet.");
 
@@ -139,18 +137,6 @@ export function ReviewStep({ plan }: { plan: WizardPlan }) {
       </Section>
 
       <Section
-        title="Key outcome to protect"
-        editStep="change"
-        changePlanId={plan.id}
-      >
-        {plan.coreMechanism ? (
-          <p className="whitespace-pre-wrap">{plan.coreMechanism}</p>
-        ) : (
-          <Empty>Not specified</Empty>
-        )}
-      </Section>
-
-      <Section
         title="Response cadence"
         editStep="support"
         changePlanId={plan.id}
@@ -168,7 +154,7 @@ export function ReviewStep({ plan }: { plan: WizardPlan }) {
 
       <Section
         title={`Training materials (${plan.trainingDocuments.length})`}
-        editStep="support"
+        editStep="change"
         changePlanId={plan.id}
       >
         {plan.trainingDocuments.length === 0 ? (

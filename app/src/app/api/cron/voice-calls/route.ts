@@ -14,7 +14,10 @@
 
 import { NextResponse } from "next/server";
 
-import { drainDueVoiceCalls } from "@/lib/voice/dispatch";
+import {
+  drainDueVoiceCalls,
+  drainEmptyVoiceCallOutputMedia,
+} from "@/lib/voice/dispatch";
 
 export const runtime = "nodejs";
 // Voice deployment is a single Recall.ai POST per row; budget is small.
@@ -40,13 +43,28 @@ export async function GET(req: Request): Promise<Response> {
   const limit = parseInt(url.searchParams.get("limit") ?? "", 10);
   const lead = parseInt(url.searchParams.get("lead") ?? "", 10);
 
-  const summary = await drainDueVoiceCalls({
-    limit: Number.isFinite(limit) ? limit : undefined,
-    leadMinutes: Number.isFinite(lead) ? lead : undefined,
-  });
+  const [dispatchSummary, cooldownSummary] = await Promise.all([
+    drainDueVoiceCalls({
+      limit: Number.isFinite(limit) ? limit : undefined,
+      leadMinutes: Number.isFinite(lead) ? lead : undefined,
+    }),
+    drainEmptyVoiceCallOutputMedia({
+      limit: Number.isFinite(limit) ? limit : undefined,
+      cooldownSeconds: 60,
+    }),
+  ]);
+
+  const results = [...dispatchSummary.results, ...cooldownSummary.results];
+
+  const summary = {
+    drained: dispatchSummary.drained + cooldownSummary.drained,
+    results,
+  };
 
   return NextResponse.json({
     drained: summary.drained,
+    dispatchedDrained: dispatchSummary.drained,
+    cooldownDrained: cooldownSummary.drained,
     okCount: summary.results.filter((r) => r.ok && !r.skippedReason).length,
     skippedCount: summary.results.filter((r) => r.skippedReason).length,
     failedCount: summary.results.filter((r) => !r.ok).length,

@@ -11,6 +11,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { startVoiceCallOutputMedia } from "@/lib/voice/dispatch";
 import { verifyRecallRealtimeWebhookToken } from "@/lib/voice/realtime-events";
 
 export const runtime = "nodejs";
@@ -78,6 +79,7 @@ export async function POST(req: Request): Promise<Response> {
       id: true,
       recallBotId: true,
       participantJoinedAt: true,
+      participantRecallId: true,
       enrollment: {
         select: {
           employee: { select: { email: true, name: true } },
@@ -99,6 +101,7 @@ export async function POST(req: Request): Promise<Response> {
     participant,
     call.enrollment.employee,
     payload.event,
+    call.participantRecallId,
   );
   if (!targetMatched) {
     return NextResponse.json({ ok: true, ignored: "non_target_participant" });
@@ -107,6 +110,7 @@ export async function POST(req: Request): Promise<Response> {
   const isJoinSignal =
     payload.event === "participant_events.join" ||
     payload.event === "participant_events.update";
+  const isLeaveSignal = payload.event === "participant_events.leave";
 
   await prisma.scheduledVoiceCall.update({
     where: { id: call.id },
@@ -116,8 +120,9 @@ export async function POST(req: Request): Promise<Response> {
           ? eventAt
           : call.participantJoinedAt,
       participantLastSeenAt: eventAt,
+      participantLeftAt: isLeaveSignal ? eventAt : null,
       participantRecallId:
-        typeof participant.id === "number" ? participant.id : null,
+        typeof participant.id === "number" ? participant.id : call.participantRecallId,
       participantName: participant.name ?? null,
       participantEmail: participant.email ?? null,
       participantPlatform: participant.platform ?? null,
@@ -125,7 +130,12 @@ export async function POST(req: Request): Promise<Response> {
     },
   });
 
-  return NextResponse.json({ ok: true });
+  if (isJoinSignal) {
+    const output = await startVoiceCallOutputMedia(call.id);
+    return NextResponse.json({ ok: true, output });
+  }
+
+  return NextResponse.json({ ok: true, cooldownStarted: isLeaveSignal });
 }
 
 /** Simple health check for Recall/manual endpoint validation. */
@@ -155,7 +165,16 @@ function matchesTargetParticipant(
   participant: RecallParticipant,
   employee: { email: string; name: string },
   event: string | undefined,
+  priorParticipantRecallId: number | null,
 ): boolean {
+  if (
+    typeof participant.id === "number" &&
+    priorParticipantRecallId !== null &&
+    participant.id === priorParticipantRecallId
+  ) {
+    return true;
+  }
+
   const participantEmail = participant.email?.trim().toLowerCase();
   if (participantEmail) {
     return participantEmail === employee.email.trim().toLowerCase();

@@ -1194,11 +1194,19 @@ model ScheduledVoiceCall {
   /// Last participant event timestamp observed for the target employee
   /// or first non-bot attendee in this one-person room.
   participantLastSeenAt  DateTime? @map("participant_last_seen_at")
+  /// Last time the target/human participant left. While set, the cron
+  /// gives them a short grace window to rejoin before stopping output
+  /// media. Cleared on the next join/update event.
+  participantLeftAt      DateTime? @map("participant_left_at")
   participantRecallId    Int?      @map("participant_recall_id")
   participantName        String?   @map("participant_name")
   participantEmail       String?   @map("participant_email")
   participantPlatform    String?   @map("participant_platform")
   participantLastEvent   Json?     @map("participant_last_event")
+  /// Output media is the visible/speaking webpage Recall streams back
+  /// into Teams. The watcher bot can remain in-call while this is off.
+  outputMediaStartedAt   DateTime? @map("output_media_started_at")
+  outputMediaStoppedAt   DateTime? @map("output_media_stopped_at")
   dispatchedAt  DateTime?        @map("dispatched_at")
   completedAt   DateTime?        @map("completed_at")
   /// JSON transcript from Recall.ai once the call ends. Shape mirrors

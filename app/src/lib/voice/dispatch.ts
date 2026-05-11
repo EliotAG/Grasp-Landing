@@ -18,9 +18,14 @@ import { VoiceCallStatus } from "@prisma/client";
 import { absoluteAppUrl, getConfiguredAppBaseUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/db";
 import { loadAgentContextByEmail } from "@/lib/agent/context";
-import { buildVoiceSystemPrompt } from "@/lib/agent/voice-prompt";
 
-import { deployRecallBot, isRecallConfigured, RecallDeployError } from "./recall";
+import {
+  deployRecallBot,
+  isRecallConfigured,
+  RecallDeployError,
+  startRecallOutputMedia,
+  stopRecallOutputMedia,
+} from "./recall";
 import { createRecallRealtimeWebhookToken } from "./realtime-events";
 
 /** Default lead window: pre-warm the bot 2 minutes before the slot. */
@@ -62,7 +67,7 @@ function recallParticipantEventsUrl(callId: string): string {
   return url.toString();
 }
 
-function recallOutputMediaUrl(callId: string): string {
+export function recallOutputMediaUrl(callId: string): string {
   const base = getConfiguredAppBaseUrl();
   if (!base) {
     throw new Error(
@@ -116,6 +121,167 @@ export async function drainDueVoiceCalls(opts?: {
     }
   }
   return { drained: results.length, results };
+}
+
+export async function drainEmptyVoiceCallOutputMedia(opts?: {
+  limit?: number;
+  cooldownSeconds?: number;
+}): Promise<{
+  drained: number;
+  results: VoiceDispatchResult[];
+}> {
+  const limit = Math.max(1, Math.min(opts?.limit ?? 25, 100));
+  const cooldownMs = Math.max(1, opts?.cooldownSeconds ?? 60) * 1000;
+  const cutoff = new Date(Date.now() - cooldownMs);
+
+  const candidates = await prisma.scheduledVoiceCall.findMany({
+    where: {
+      status: VoiceCallStatus.dispatched,
+      recallBotId: { not: null },
+      participantLeftAt: { lte: cutoff },
+      outputMediaStartedAt: { not: null },
+      changePlan: { status: "active", voiceKickoffEnabled: true },
+    },
+    orderBy: { participantLeftAt: "asc" },
+    take: limit,
+    select: {
+      id: true,
+      enrollmentId: true,
+      recallBotId: true,
+      outputMediaStartedAt: true,
+      outputMediaStoppedAt: true,
+    },
+  });
+
+  const due = candidates.filter(
+    (row) =>
+      row.outputMediaStartedAt &&
+      (!row.outputMediaStoppedAt ||
+        row.outputMediaStoppedAt.getTime() < row.outputMediaStartedAt.getTime()),
+  );
+
+  const results: VoiceDispatchResult[] = [];
+  for (const row of due) {
+    try {
+      await stopRecallOutputMedia(row.recallBotId!);
+      await prisma.scheduledVoiceCall.update({
+        where: { id: row.id },
+        data: { outputMediaStoppedAt: new Date(), error: null },
+      });
+      results.push({
+        ok: true,
+        callId: row.id,
+        enrollmentId: row.enrollmentId,
+        skippedReason: "output media stopped after empty-room cooldown",
+      });
+    } catch (err) {
+      const message =
+        err instanceof RecallDeployError
+          ? `${err.message}${err.body ? ` :: ${err.body.slice(0, 200)}` : ""}`
+          : err instanceof Error
+            ? err.message
+            : "Recall output-media stop failed";
+      await prisma.scheduledVoiceCall.update({
+        where: { id: row.id },
+        data: { error: message },
+      });
+      results.push({
+        ok: false,
+        callId: row.id,
+        enrollmentId: row.enrollmentId,
+        error: message,
+      });
+    }
+  }
+
+  return { drained: results.length, results };
+}
+
+export async function startVoiceCallOutputMedia(
+  callId: string,
+): Promise<VoiceDispatchResult> {
+  const row = await prisma.scheduledVoiceCall.findUnique({
+    where: { id: callId },
+    select: {
+      id: true,
+      enrollmentId: true,
+      recallBotId: true,
+      outputMediaStartedAt: true,
+      outputMediaStoppedAt: true,
+      changePlan: {
+        select: { status: true, voiceKickoffEnabled: true },
+      },
+    },
+  });
+  if (!row) {
+    return {
+      ok: false,
+      callId,
+      enrollmentId: "<unknown>",
+      error: "Voice-call row not found",
+    };
+  }
+  if (!row.recallBotId) {
+    return {
+      ok: true,
+      callId,
+      enrollmentId: row.enrollmentId,
+      skippedReason: "no watcher bot",
+    };
+  }
+  if (!row.changePlan.voiceKickoffEnabled || row.changePlan.status !== "active") {
+    return {
+      ok: true,
+      callId,
+      enrollmentId: row.enrollmentId,
+      skippedReason: "plan inactive or voice disabled",
+    };
+  }
+
+  const active =
+    row.outputMediaStartedAt &&
+    (!row.outputMediaStoppedAt ||
+      row.outputMediaStoppedAt.getTime() < row.outputMediaStartedAt.getTime());
+  if (active) {
+    return {
+      ok: true,
+      callId,
+      enrollmentId: row.enrollmentId,
+      recallBotId: row.recallBotId,
+      skippedReason: "output media already active",
+    };
+  }
+
+  try {
+    await startRecallOutputMedia(row.recallBotId, recallOutputMediaUrl(callId));
+    await prisma.scheduledVoiceCall.update({
+      where: { id: callId },
+      data: {
+        outputMediaStartedAt: new Date(),
+        outputMediaStoppedAt: null,
+        participantLeftAt: null,
+        error: null,
+      },
+    });
+    return {
+      ok: true,
+      callId,
+      enrollmentId: row.enrollmentId,
+      recallBotId: row.recallBotId,
+    };
+  } catch (err) {
+    const message =
+      err instanceof RecallDeployError
+        ? `${err.message}${err.body ? ` :: ${err.body.slice(0, 200)}` : ""}`
+        : err instanceof Error
+          ? err.message
+          : "Recall output-media start failed";
+    await prisma.scheduledVoiceCall.update({
+      where: { id: callId },
+      data: { error: message },
+    });
+    return { ok: false, callId, enrollmentId: row.enrollmentId, error: message };
+  }
 }
 
 export async function runScheduledVoiceCall(
@@ -223,8 +389,6 @@ export async function runScheduledVoiceCall(
       skippedReason: "no context",
     };
   }
-  const systemPrompt = buildVoiceSystemPrompt(ctx);
-
   let webhookUrl: string;
   try {
     webhookUrl = recallWebhookUrl();
@@ -238,10 +402,8 @@ export async function runScheduledVoiceCall(
     const bot = await deployRecallBot({
       meetingUrl: row.meetingJoinUrl,
       botName: `Grasp · ${row.changePlan.organization.name}`.slice(0, 64),
-      systemPrompt,
       webhookUrl,
       participantEventsWebhookUrl: recallParticipantEventsUrl(callId),
-      outputMediaUrl: recallOutputMediaUrl(callId),
       // Recall accepts a join_at timestamp; we pass the row's
       // scheduledFor so the bot waits in the lobby until the slot.
       joinAt: row.scheduledFor,

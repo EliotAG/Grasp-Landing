@@ -107,7 +107,7 @@ export function MaterialsStep({
         </p>
       )}
 
-      {showNav ? <StepNav changePlanId={plan.id} step="support" /> : null}
+      {showNav ? <StepNav changePlanId={plan.id} step="change" /> : null}
     </div>
   );
 }

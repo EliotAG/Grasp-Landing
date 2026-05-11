@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
+import { leaveRecallCall, RecallDeployError } from "@/lib/voice/recall";
 import { verifyRecallRealtimeWebhookToken } from "@/lib/voice/realtime-events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function recallApiHost(): string {
-  return process.env.RECALL_API_HOST?.trim() || "us-east-1.recall.ai";
-}
 
 export async function POST(
   req: Request,
@@ -31,25 +28,17 @@ export async function POST(
     return NextResponse.json({ ok: true, skipped: "already_completed" });
   }
 
-  const apiKey = process.env.RECALL_API_KEY?.trim();
-  if (!apiKey) {
+  try {
+    await leaveRecallCall(call.recallBotId);
+  } catch (err) {
+    const detail =
+      err instanceof RecallDeployError
+        ? `${err.message}${err.body ? ` :: ${err.body.slice(0, 400)}` : ""}`
+        : err instanceof Error
+          ? err.message
+          : "Recall leave_call failed";
     return NextResponse.json(
-      { error: "RECALL_API_KEY is not configured" },
-      { status: 503 },
-    );
-  }
-
-  const res = await fetch(
-    `https://${recallApiHost()}/api/v1/bot/${encodeURIComponent(call.recallBotId)}/leave_call/`,
-    {
-      method: "POST",
-      headers: { Authorization: `Token ${apiKey}`, Accept: "application/json" },
-    },
-  );
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    return NextResponse.json(
-      { error: `Recall leave_call failed: ${res.status} ${text.slice(0, 400)}` },
+      { error: detail },
       { status: 502 },
     );
   }

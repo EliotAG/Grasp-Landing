@@ -1,4 +1,3 @@
-import type { RealtimeSessionPayload } from "@/lib/voice/intake-session";
 import { loadAgentContextByEmployeeId } from "@/lib/agent/context";
 import { buildVoiceSystemPrompt } from "@/lib/agent/voice-prompt";
 import { prisma } from "@/lib/db";
@@ -12,6 +11,12 @@ interface RealtimeSession {
   model: string;
   voice?: string;
   client_secret: { value: string; expires_at: number };
+}
+
+export interface RealtimeSessionPayload {
+  session: RealtimeSession;
+  handshakeUrl: string;
+  voice: string;
 }
 
 export async function createVoiceCallRealtimeSession(
