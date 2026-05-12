@@ -28,8 +28,8 @@ export function ChangeStep({ plan }: { plan: WizardPlan }) {
           </h2>
           <p className="mt-2 max-w-[660px] text-[14px] leading-[1.65] text-[color:var(--color-muted)]">
             Upload SOPs, briefs, or notes you already have so Grasp has the
-            context up front. Then name the rollout, write a plain-language
-            summary, and pick the adoption window.
+            context up front. Then name the rollout, describe the change in
+            your own words, and pick the adoption window.
           </p>
         </div>
 

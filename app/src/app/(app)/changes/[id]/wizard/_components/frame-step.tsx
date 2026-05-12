@@ -53,7 +53,7 @@ export function FrameStep({
 
         <div>
           <label htmlFor="summary" className="label">
-            Plain-language summary
+            Description of the change
           </label>
           <textarea
             id="summary"

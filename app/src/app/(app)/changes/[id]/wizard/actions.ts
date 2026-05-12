@@ -244,7 +244,7 @@ export async function aiProposeStakeholderGroups(
   if (!plan.summary?.trim()) {
     return {
       ok: false,
-      error: "Add a plain-language summary in the first step first.",
+      error: "Add a description of the change in the first step first.",
     };
   }
   const employees = await prisma.employee.findMany({
@@ -304,7 +304,10 @@ export async function aiDraftBehaviorSpec(
   if (!isAiEnabled()) return { ok: false, error: "AI is not configured" };
   const { plan } = await loadOwnedPlan(changePlanId);
   if (!plan.summary?.trim()) {
-    return { ok: false, error: "Add a summary in the first step first." };
+    return {
+      ok: false,
+      error: "Add a description of the change in the first step first.",
+    };
   }
   const group = await prisma.stakeholderGroup.findFirst({
     where: { id: groupId, changePlanId },
@@ -377,7 +380,10 @@ export async function aiProposeCoreMechanism(
   if (!isAiEnabled()) return { ok: false, error: "AI is not configured" };
   const { plan } = await loadOwnedPlan(changePlanId);
   if (!plan.summary?.trim()) {
-    return { ok: false, error: "Add a summary in the first step first." };
+    return {
+      ok: false,
+      error: "Add a description of the change in the first step first.",
+    };
   }
   const groups = await prisma.stakeholderGroup.findMany({
     where: { changePlanId },

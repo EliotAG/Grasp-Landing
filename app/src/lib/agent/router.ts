@@ -184,7 +184,7 @@ const ROUTER_SYSTEM_PROMPT = `You are routing an inbound text message in Grasp, 
 Each enrollment pairs one user with one change rollout (a "plan"). The same user may be in multiple active plans at once. Your only job is to decide WHICH enrollment a single inbound message refers to, and how confident you are.
 
 Rules:
-- "high" confidence: the message references a topic, behavior, or term that clearly belongs to one rollout's summary, core mechanism, or stakeholder group. Or: the message is a direct continuation of the topic in that rollout's last_message_preview.
+- "high" confidence: the message references a topic, behavior, or term that clearly belongs to one rollout's description, core mechanism, or stakeholder group. Or: the message is a direct continuation of the topic in that rollout's last_message_preview.
 - "medium" confidence: one rollout is the best guess but the message itself is generic ("yeah ok", "I'll think about it", "what's next?"). In that case, prefer the recently-routed enrollment if one is provided and was set within the last day. Set runner_up_enrollment_id to null.
 - "low" confidence: the message could genuinely fit two or more rollouts and you can't break the tie from content alone. Set runner_up_enrollment_id to the second-best id.
 - Never invent an enrollment id. The id you return must exactly match one of the ids listed in the "Active enrollments" block.
@@ -198,7 +198,7 @@ function formatEnrollmentForRouter(
     `[#${position}] enrollment_id: ${e.enrollmentId}`,
     `  plan_name: ${e.planName}`,
   ];
-  if (e.planSummary) lines.push(`  plan_summary: ${e.planSummary}`);
+  if (e.planSummary) lines.push(`  plan_description: ${e.planSummary}`);
   if (e.coreMechanism) lines.push(`  core_mechanism: ${e.coreMechanism}`);
   if (e.stakeholderGroupName) {
     lines.push(`  user_is_in_group: ${e.stakeholderGroupName}`);

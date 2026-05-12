@@ -225,10 +225,10 @@ export function StakeholdersStep({
           <p className="text-[13px] font-semibold">Need a starting point?</p>
           <p className="text-[12px] text-[color:var(--color-muted)]">
             {aiAvailable
-              ? "Grasp will read your summary and the org chart and propose distinct groups."
+              ? "Grasp will read your change description and the org chart and propose distinct groups."
               : plan.summary?.trim()
                 ? "Upload an org chart on the Org Chart page to enable this."
-                : "Add a summary in the first step to enable this."}
+                : "Add a description of the change in the first step to enable this."}
           </p>
         </div>
         <button

@@ -5,9 +5,9 @@
  * It forces leadership to identify distinct stakeholder groups, label them,
  * and specify how each is affected and why."
  *
- * Given the plain-language change summary + a flattened org chart, propose
- * 2–6 stakeholder groups with rationale. Leader edits the result; nothing
- * is persisted by this function.
+ * Given the leader's description of the change + a flattened org chart,
+ * propose 2–6 stakeholder groups with rationale. Leader edits the result;
+ * nothing is persisted by this function.
  */
 import { z } from "zod";
 import { callStructured } from "../structured";
@@ -62,7 +62,7 @@ export interface OrgChartRow {
 
 export const STAKEHOLDER_SYSTEM_PROMPT = `You are assisting a leadership team using Grasp to plan a process change.
 
-Your task: from a plain-language change summary plus the company's org chart, propose distinct stakeholder groups affected by this change. Per the research base (Atkins et al.; CFIR), a rollout almost always has multiple related but distinct behaviors — collapse those into "affected employees" and you degrade everything downstream.
+Your task: from the leader's description of the change plus the company's org chart, propose distinct stakeholder groups affected by this change. Per the research base (Atkins et al.; CFIR), a rollout almost always has multiple related but distinct behaviors — collapse those into "affected employees" and you degrade everything downstream.
 
 Rules:
 - Propose 2–6 groups. Fewer is better than padded.
@@ -83,7 +83,7 @@ export async function proposeStakeholderGroups(input: {
     )
     .join("\n");
 
-  const user = `CHANGE SUMMARY:
+  const user = `DESCRIPTION OF THE CHANGE:
 ${input.summary.trim()}
 
 ORG CHART (id  name  email  team  title  manager):

@@ -45,7 +45,7 @@ function buildUserPrompt(ctx: AnnouncementContext): string {
 
   return `CHANGE NAME: ${ctx.changeName}
 
-PLAIN-LANGUAGE SUMMARY:
+DESCRIPTION OF THE CHANGE:
 ${ctx.changeSummary.trim()}
 
 CORE MECHANISM (what cannot be lost):

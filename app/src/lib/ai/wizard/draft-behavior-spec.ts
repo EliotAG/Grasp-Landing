@@ -43,7 +43,7 @@ export async function draftBehaviorSpec(input: {
   groupName: string;
   groupDescription: string;
 }): Promise<BehaviorSpec> {
-  const user = `CHANGE SUMMARY:
+  const user = `DESCRIPTION OF THE CHANGE:
 ${input.changeSummary.trim()}
 
 STAKEHOLDER GROUP:

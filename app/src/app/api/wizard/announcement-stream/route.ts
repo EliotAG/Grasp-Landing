@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   }
   if (!plan.summary?.trim()) {
     return NextResponse.json(
-      { error: "Add a summary in the first step first." },
+      { error: "Add a description of the change in the first step first." },
       { status: 400 },
     );
   }

@@ -61,7 +61,7 @@ Punctuation rules you follow in every message:
   sections.push(`# What you know about this change
 
 Plan: ${ctx.plan.name}
-${ctx.plan.summary ? `Summary: ${ctx.plan.summary}\n` : ""}${
+${ctx.plan.summary ? `Description of the change: ${ctx.plan.summary}\n` : ""}${
     ctx.plan.coreMechanism
       ? `Core mechanism (what cannot be lost in telephone): ${ctx.plan.coreMechanism}\n`
       : ""
